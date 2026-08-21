@@ -1,0 +1,101 @@
+# Normalise text files in the repository. Overrides a machine's core.autocrlf,
+# so checkouts are consistent regardless of each developer's global git config.
+* text=auto
+
+# ---------------------------------------------------------------------------
+# Unity YAML assets
+# ---------------------------------------------------------------------------
+# These must stay LF: UnityYAMLMerge cannot handle CRLF, and mixed endings
+# produce whole-file diffs whenever someone on a different OS saves a scene.
+#
+# To enable three-way merging of these files, each developer runs once:
+#   git config --global merge.unityyamlmerge.name "Unity SmartMerge"
+#   git config --global merge.unityyamlmerge.driver '"C:/Program Files/Unity/Hub/Editor/6000.5.4f1/Editor/Data/Tools/UnityYAMLMerge.exe" merge -p %O %B %A %A'
+# Until then git falls back to its default merge, which still works.
+
+*.unity                 merge=unityyamlmerge eol=lf
+*.prefab                merge=unityyamlmerge eol=lf
+*.asset                 merge=unityyamlmerge eol=lf
+*.meta                  merge=unityyamlmerge eol=lf
+*.mat                   merge=unityyamlmerge eol=lf
+*.anim                  merge=unityyamlmerge eol=lf
+*.controller            merge=unityyamlmerge eol=lf
+*.overrideController    merge=unityyamlmerge eol=lf
+*.playable              merge=unityyamlmerge eol=lf
+*.mask                  merge=unityyamlmerge eol=lf
+*.mixer                 merge=unityyamlmerge eol=lf
+*.terrainlayer          merge=unityyamlmerge eol=lf
+*.physicMaterial        merge=unityyamlmerge eol=lf
+*.physicsMaterial2D     merge=unityyamlmerge eol=lf
+*.guiskin               merge=unityyamlmerge eol=lf
+*.fontsettings          merge=unityyamlmerge eol=lf
+*.flare                 merge=unityyamlmerge eol=lf
+*.brush                 merge=unityyamlmerge eol=lf
+*.giparams              merge=unityyamlmerge eol=lf
+*.shadervariants        merge=unityyamlmerge eol=lf
+
+# Unity/JSON project files that are hand-edited or tool-generated.
+*.asmdef                eol=lf
+*.asmref                eol=lf
+*.inputactions          eol=lf
+*.json                  eol=lf
+
+# ---------------------------------------------------------------------------
+# Source
+# ---------------------------------------------------------------------------
+*.cs                    text diff=csharp
+*.shader                text
+*.hlsl                  text
+*.cginc                 text
+*.compute               text
+*.md                    text
+
+# ---------------------------------------------------------------------------
+# Binary assets — never diff, never touch line endings
+# ---------------------------------------------------------------------------
+# NOTE: this project does not use Git LFS. Keep large binaries out of the repo
+# rather than committing them; revisit LFS before the art pass lands.
+
+*.png                   binary
+*.jpg                   binary
+*.jpeg                  binary
+*.tga                   binary
+*.tif                   binary
+*.tiff                  binary
+*.psd                   binary
+*.exr                   binary
+*.hdr                   binary
+*.gif                   binary
+*.bmp                   binary
+*.cubemap               binary
+
+*.fbx                   binary
+*.obj                   binary
+*.blend                 binary
+*.dae                   binary
+*.3ds                   binary
+*.max                   binary
+*.ma                    binary
+*.mb                    binary
+
+*.wav                   binary
+*.mp3                   binary
+*.ogg                   binary
+*.aif                   binary
+*.aiff                  binary
+
+*.mp4                   binary
+*.mov                   binary
+*.webm                  binary
+
+*.ttf                   binary
+*.otf                   binary
+
+*.dll                   binary
+*.so                    binary
+*.dylib                 binary
+*.a                     binary
+*.aar                   binary
+*.bundle                binary
+*.pdb                   binary
+*.unitypackage          binary
