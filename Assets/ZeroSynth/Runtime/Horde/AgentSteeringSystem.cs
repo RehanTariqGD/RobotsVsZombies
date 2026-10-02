@@ -53,6 +53,7 @@ namespace ZeroSynth
     }
 
     [BurstCompile]
+    [WithAll(typeof(Active))]
     public partial struct FlowFieldSteerJob : IJobEntity
     {
         public float DeltaTime;
@@ -93,6 +94,7 @@ namespace ZeroSynth
     }
 
     [BurstCompile]
+    [WithAll(typeof(Active))]
     public partial struct DirectSteerJob : IJobEntity
     {
         public float DeltaTime;

@@ -10,14 +10,14 @@ using Random = Unity.Mathematics.Random;
 namespace ZeroSynth.Authoring
 {
     /// <summary>
-    /// Spawns the swarm at runtime from a single prototype entity.
+    /// Allocates the agent pool once at load and activates from it.
     /// </summary>
     /// <remarks>
-    /// Deliberately not a Baker/SubScene setup. The shipping spawn path needs a
-    /// pre-allocated pool that recycles entities rather than creating and
-    /// destroying them — structural changes are the dominant cost in ECS — and
-    /// building on <c>Instantiate</c> from a prototype is the same shape that
-    /// pool will take. Subscenes come back for static level geometry.
+    /// Every agent the run will ever use is instantiated here. Spawning is
+    /// then an <see cref="Active"/> flag flip and a transform write — no
+    /// structural change, no allocation, no archetype churn at wave rate.
+    /// The pool ceiling is a hard cap: the wave director cannot exceed it, so
+    /// size it for the largest wave the design allows.
     /// </remarks>
     public sealed class HordeBootstrap : MonoBehaviour
     {
@@ -28,12 +28,19 @@ namespace ZeroSynth.Authoring
         [Tooltip("Off by default: shadow casting submits the whole horde a second time for the shadow pass, doubling its vertex cost.")]
         [SerializeField] bool m_CastShadows;
 
+        [Header("Pool")]
+        [Tooltip("Hard ceiling on concurrent agents. Allocated once at load.")]
+        [SerializeField, Min(1)] int m_PoolSize = 8192;
+
+        [Tooltip("How many to activate at startup.")]
+        [SerializeField, Min(0)] int m_InitialCount = 2000;
+
         [Header("Swarm")]
-        [SerializeField, Min(0)] int m_Count = 2000;
-        [SerializeField, Min(1f)] float m_SpawnInnerRadius = 40f;
-        [SerializeField, Min(1f)] float m_SpawnOuterRadius = 70f;
+        [SerializeField, Min(1f)] float m_SpawnInnerRadius = 45f;
+        [SerializeField, Min(1f)] float m_SpawnOuterRadius = 85f;
         [SerializeField] float m_MinSpeed = 1.5f;
-        [SerializeField] float m_MaxSpeed = 3.5f;
+        [SerializeField] float m_MaxSpeed = 4f;
+        [SerializeField] float m_MaxHealth = 30f;
 
         [Header("Objective")]
         [SerializeField] Transform m_Target;
@@ -41,15 +48,20 @@ namespace ZeroSynth.Authoring
         [SerializeField] uint m_Seed = 0x5F3759DF;
 
         EntityManager m_EntityManager;
+        NativeArray<Entity> m_Pool;
         Entity m_TargetEntity;
+        DamageBuffer m_DamageBuffer;
+        Random m_Random;
         bool m_Initialised;
+
+        public int PoolSize => m_Pool.IsCreated ? m_Pool.Length : 0;
 
         void Start()
         {
             var world = World.DefaultGameObjectInjectionWorld;
             if (world == null)
             {
-                Debug.LogError("[ZeroSynth] No default ECS world. Is the Entities package initialised?", this);
+                Debug.LogError("[ZeroSynth] No default ECS world.", this);
                 return;
             }
 
@@ -60,19 +72,21 @@ namespace ZeroSynth.Authoring
             }
 
             m_EntityManager = world.EntityManager;
+            m_Random = Random.CreateFromIndex(m_Seed);
 
             CreateTargetSingleton();
-            SpawnSwarm();
+            CreateDamageBuffer();
+            AllocatePool();
+
+            int activated = Activate(math.min(m_InitialCount, m_Pool.Length));
+            Debug.Log($"[ZeroSynth] Pool {m_Pool.Length}, activated {activated}.");
 
             m_Initialised = true;
         }
 
         void Update()
         {
-            // Keep the objective in sync so the target can be dragged around in
-            // play mode. Cheap: one component write per frame, not per agent.
-            if (!m_Initialised || m_Target == null)
-                return;
+            if (!m_Initialised || m_Target == null) return;
 
             if (m_EntityManager.Exists(m_TargetEntity))
             {
@@ -93,34 +107,78 @@ namespace ZeroSynth.Authoring
             });
         }
 
-        void SpawnSwarm()
+        void CreateDamageBuffer()
+        {
+            m_DamageBuffer = new DamageBuffer();
+            m_DamageBuffer.Allocate();
+
+            var entity = m_EntityManager.CreateEntity();
+            m_EntityManager.SetName(entity, "DamageBuffer");
+            m_EntityManager.AddComponentObject(entity, m_DamageBuffer);
+        }
+
+        void AllocatePool()
         {
             var prototype = CreatePrototype();
 
-            var entities = new NativeArray<Entity>(m_Count, Allocator.Temp);
-            m_EntityManager.Instantiate(prototype, entities);
+            m_Pool = new NativeArray<Entity>(m_PoolSize, Allocator.Persistent);
+            m_EntityManager.Instantiate(prototype, m_Pool);
 
-            var random = Random.CreateFromIndex(m_Seed);
-
-            for (int i = 0; i < entities.Length; i++)
+            // Everything starts dormant and parked. Activation is the only
+            // thing that puts an agent into the world.
+            for (int i = 0; i < m_Pool.Length; i++)
             {
-                // Ring spawn: keeps the swarm off the objective at t=0 so the
-                // approach is visible rather than starting already arrived.
-                float angle = random.NextFloat(0f, math.PI * 2f);
-                float radius = random.NextFloat(m_SpawnInnerRadius, m_SpawnOuterRadius);
-                float3 position = new float3(math.cos(angle) * radius, 0f, math.sin(angle) * radius);
-
-                m_EntityManager.SetComponentData(entities[i], LocalTransform.FromPosition(position));
-                m_EntityManager.SetComponentData(entities[i], new HordeAgent
-                {
-                    Speed = random.NextFloat(m_MinSpeed, m_MaxSpeed)
-                });
+                m_EntityManager.SetComponentEnabled<Active>(m_Pool[i], false);
+                m_EntityManager.SetComponentData(m_Pool[i],
+                    LocalTransform.FromPosition(PoolConstants.ParkPosition));
             }
 
-            entities.Dispose();
             m_EntityManager.DestroyEntity(prototype);
+        }
 
-            Debug.Log($"[ZeroSynth] Spawned {m_Count} horde agents.");
+        /// <summary>Brings <paramref name="count"/> dormant agents into the world.</summary>
+        public int Activate(int count)
+        {
+            if (!m_Pool.IsCreated) return 0;
+
+            int activated = 0;
+            for (int i = 0; i < m_Pool.Length && activated < count; i++)
+            {
+                var entity = m_Pool[i];
+                if (m_EntityManager.IsComponentEnabled<Active>(entity))
+                    continue;
+
+                float angle = m_Random.NextFloat(0f, math.PI * 2f);
+                float radius = m_Random.NextFloat(m_SpawnInnerRadius, m_SpawnOuterRadius);
+                float3 position = new float3(math.cos(angle) * radius, 0f, math.sin(angle) * radius);
+
+                m_EntityManager.SetComponentData(entity, LocalTransform.FromPosition(position));
+                m_EntityManager.SetComponentData(entity, new HordeAgent
+                {
+                    Speed = m_Random.NextFloat(m_MinSpeed, m_MaxSpeed)
+                });
+                m_EntityManager.SetComponentData(entity, new Health
+                {
+                    Current = m_MaxHealth,
+                    Max = m_MaxHealth
+                });
+                m_EntityManager.SetComponentEnabled<Active>(entity, true);
+
+                activated++;
+            }
+
+            return activated;
+        }
+
+        /// <summary>Live agent count. Used by the debug tooling.</summary>
+        public int CountActive()
+        {
+            if (!m_Pool.IsCreated) return 0;
+
+            int n = 0;
+            for (int i = 0; i < m_Pool.Length; i++)
+                if (m_EntityManager.IsComponentEnabled<Active>(m_Pool[i])) n++;
+            return n;
         }
 
         Entity CreatePrototype()
@@ -146,12 +204,18 @@ namespace ZeroSynth.Authoring
 
             m_EntityManager.AddComponentData(prototype, LocalTransform.FromPosition(float3.zero));
             m_EntityManager.AddComponentData(prototype, new HordeAgent { Speed = 1f });
-
-            // Excludes the prototype itself from every gameplay query while
-            // leaving it valid as an Instantiate source.
+            m_EntityManager.AddComponentData(prototype, new Health { Current = m_MaxHealth, Max = m_MaxHealth });
+            m_EntityManager.AddComponent<Active>(prototype);
             m_EntityManager.AddComponent<Prefab>(prototype);
 
             return prototype;
+        }
+
+        void OnDestroy()
+        {
+            if (m_Pool.IsCreated) m_Pool.Dispose();
+            m_DamageBuffer?.Dispose();
+            m_DamageBuffer = null;
         }
     }
 }
