@@ -22,9 +22,18 @@ namespace ZeroSynth.Authoring
         [Tooltip("Centre the grid on this transform. Leave empty to centre on world origin.")]
         [SerializeField] Transform m_Centre;
 
+        [Header("Spatial grid (neighbour queries)")]
+        [Tooltip("Cell size for neighbour queries. Set near the largest query radius in use — too small and queries sweep many cells, too large and each cell holds too many candidates.")]
+        [SerializeField, Min(0.5f)] float m_SpatialCellSize = 4f;
+
+        [Tooltip("Must be at least the agent pool size, or agents are dropped from queries.")]
+        [SerializeField, Min(1)] int m_SpatialCapacity = 8192;
+
         EntityManager m_EntityManager;
         GridData m_Grid;
+        SpatialGridData m_Spatial;
         Entity m_Entity;
+        Entity m_SpatialEntity;
 
         public GridConfig Config { get; private set; }
         public GridData Grid => m_Grid;
@@ -60,7 +69,37 @@ namespace ZeroSynth.Authoring
             m_EntityManager.AddComponentData(m_Entity, config);
             m_EntityManager.AddComponentObject(m_Entity, m_Grid);
 
+            CreateSpatialGrid(config);
+
             Debug.Log($"[ZeroSynth] Grid {m_Width}x{m_Height} @ {m_CellSize}m created.");
+        }
+
+        /// <summary>
+        /// The neighbour-query grid covers the same world area as the
+        /// pathfinding grid but at a coarser cell size.
+        /// </summary>
+        void CreateSpatialGrid(GridConfig pathConfig)
+        {
+            float worldWidth = m_Width * m_CellSize;
+            float worldHeight = m_Height * m_CellSize;
+
+            var spatialConfig = new SpatialGridConfig
+            {
+                Origin = pathConfig.Origin,
+                CellSize = m_SpatialCellSize,
+                Width = Mathf.Max(1, Mathf.CeilToInt(worldWidth / m_SpatialCellSize)),
+                Height = Mathf.Max(1, Mathf.CeilToInt(worldHeight / m_SpatialCellSize))
+            };
+
+            m_Spatial = new SpatialGridData();
+            m_Spatial.Allocate(spatialConfig.CellCount, m_SpatialCapacity);
+
+            m_SpatialEntity = m_EntityManager.CreateEntity();
+            m_EntityManager.SetName(m_SpatialEntity, "SpatialGrid");
+            m_EntityManager.AddComponentData(m_SpatialEntity, spatialConfig);
+            m_EntityManager.AddComponentObject(m_SpatialEntity, m_Spatial);
+
+            Debug.Log($"[ZeroSynth] Spatial grid {spatialConfig.Width}x{spatialConfig.Height} @ {m_SpatialCellSize}m, capacity {m_SpatialCapacity}.");
         }
 
         void StampObstacles(GridConfig config)
@@ -94,6 +133,8 @@ namespace ZeroSynth.Authoring
         {
             m_Grid?.Dispose();
             m_Grid = null;
+            m_Spatial?.Dispose();
+            m_Spatial = null;
         }
     }
 }

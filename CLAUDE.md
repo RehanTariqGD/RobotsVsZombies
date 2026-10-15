@@ -21,6 +21,10 @@ Short answers. No progress narration, no restating what was just done, no
 recaps the user did not ask for. State the change and stop. Expand only when
 the user asks or when a real risk needs flagging.
 
+Talk like a colleague, not a report. Default to a few sentences. No status
+tables, no checklists, no headings unless the user asks for a document. If a
+risk needs flagging, one line is usually enough.
+
 ## R3 — Record instructions as rules
 
 When the user says what should or should not be done, add it here as a new

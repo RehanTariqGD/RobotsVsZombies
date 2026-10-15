@@ -449,6 +449,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &548834042
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 548834044}
+  - component: {fileID: 548834043}
+  m_Layer: 0
+  m_Name: Turret_Closest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &548834043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 548834042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f3a5ecdb569c5848b8c47ecb0591497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.TurretAuthoring
+  m_Mesh: {fileID: 10203, guid: 0000000000000000e000000000000000, type: 0}
+  m_Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+  m_Range: 28
+  m_FireRate: 4
+  m_Damage: 10
+  m_SplashRadius: 0
+  m_Stance: 0
+--- !u!4 &548834044
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 548834042}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -12, y: 1, z: -6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &801918847
 GameObject:
   m_ObjectHideFlags: 0
@@ -667,6 +718,8 @@ MonoBehaviour:
   m_Height: 256
   m_CellSize: 1
   m_Centre: {fileID: 801918848}
+  m_SpatialCellSize: 4
+  m_SpatialCapacity: 8192
 --- !u!4 &1202652867
 Transform:
   m_ObjectHideFlags: 0
@@ -677,6 +730,57 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1240721144
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1240721146}
+  - component: {fileID: 1240721145}
+  m_Layer: 0
+  m_Name: Turret_Strongest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1240721145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1240721144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f3a5ecdb569c5848b8c47ecb0591497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.TurretAuthoring
+  m_Mesh: {fileID: 10203, guid: 0000000000000000e000000000000000, type: 0}
+  m_Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+  m_Range: 28
+  m_FireRate: 4
+  m_Damage: 10
+  m_SplashRadius: 4
+  m_Stance: 1
+--- !u!4 &1240721146
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1240721144}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: -6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -834,6 +938,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2125158503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2125158505}
+  - component: {fileID: 2125158504}
+  m_Layer: 0
+  m_Name: Turret_Fastest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2125158504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2125158503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f3a5ecdb569c5848b8c47ecb0591497, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.TurretAuthoring
+  m_Mesh: {fileID: 10203, guid: 0000000000000000e000000000000000, type: 0}
+  m_Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+  m_Range: 28
+  m_FireRate: 4
+  m_Damage: 10
+  m_SplashRadius: 0
+  m_Stance: 2
+--- !u!4 &2125158505
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2125158503}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12, y: 1, z: -6}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -849,3 +1004,6 @@ SceneRoots:
   - {fileID: 893150065}
   - {fileID: 156394839}
   - {fileID: 399641098}
+  - {fileID: 548834044}
+  - {fileID: 1240721146}
+  - {fileID: 2125158505}

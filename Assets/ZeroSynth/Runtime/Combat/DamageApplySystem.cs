@@ -27,6 +27,10 @@ namespace ZeroSynth
 
         public void OnUpdate(ref SystemState state)
         {
+            // Producers write to the queue from parallel jobs, so every one of
+            // them must have finished before the queue is read here.
+            state.CompleteDependency();
+
             var buffer = state.EntityManager.GetComponentObject<DamageBuffer>(
                 m_BufferQuery.GetSingletonEntity());
 
@@ -80,6 +84,8 @@ namespace ZeroSynth
 
         public void OnUpdate(ref SystemState state)
         {
+            state.CompleteDependency();
+
             var buffer = state.EntityManager.GetComponentObject<DamageBuffer>(
                 m_BufferQuery.GetSingletonEntity());
 
