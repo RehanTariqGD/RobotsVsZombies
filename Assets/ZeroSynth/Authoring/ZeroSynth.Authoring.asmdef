@@ -10,7 +10,8 @@
         "Unity.Mathematics",
         "Unity.Transforms",
         "Unity.Entities.Graphics",
-        "Unity.Physics"
+        "Unity.Physics",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
