@@ -1,5 +1,6 @@
 using System.Text;
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace ZeroSynth.Authoring
@@ -50,6 +51,9 @@ namespace ZeroSynth.Authoring
         EntityQuery m_ActiveAgents;
         EntityQuery m_AllAgents;
         EntityQuery m_GridQuery;
+        EntityQuery m_RunQuery;
+        EntityQuery m_PoweredTurrets;
+        EntityQuery m_AllTurrets;
         bool m_EcsReady;
 
         readonly StringBuilder m_Builder = new StringBuilder(512);
@@ -84,6 +88,17 @@ namespace ZeroSynth.Authoring
             });
 
             m_GridQuery = m_EntityManager.CreateEntityQuery(ComponentType.ReadOnly<GridData>());
+            m_RunQuery = m_EntityManager.CreateEntityQuery(ComponentType.ReadOnly<WaveState>());
+
+            m_PoweredTurrets = m_EntityManager.CreateEntityQuery(
+                ComponentType.ReadOnly<Turret>(),
+                ComponentType.ReadOnly<Powered>());
+
+            m_AllTurrets = m_EntityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<Turret>() },
+                Options = EntityQueryOptions.IgnoreComponentEnabledState
+            });
 
             m_EcsReady = true;
         }
@@ -158,6 +173,26 @@ namespace ZeroSynth.Authoring
                 int pool = m_AllAgents.CalculateEntityCount();
                 m_Builder.Append("agents ").Append(active).Append(" / ").Append(pool).Append('\n');
 
+                m_Builder.Append("turrets ").Append(m_PoweredTurrets.CalculateEntityCount())
+                         .Append(" powered / ").Append(m_AllTurrets.CalculateEntityCount()).Append('\n');
+
+                if (!m_RunQuery.IsEmpty)
+                {
+                    var runEntity = m_RunQuery.GetSingletonEntity();
+                    var wave = m_EntityManager.GetComponentData<WaveState>(runEntity);
+                    var economy = m_EntityManager.GetComponentData<Economy>(runEntity);
+
+                    m_Builder.Append("wave ").Append(wave.Index).Append("  ").Append(wave.Phase);
+                    if (wave.Phase == WavePhase.Preparing)
+                        m_Builder.Append(" ").Append(math.max(0f, wave.Timer).ToString("F1")).Append("s");
+                    else if (wave.Phase == WavePhase.Spawning)
+                        m_Builder.Append("  ").Append(wave.Released).Append("+").Append(wave.Remaining);
+                    m_Builder.Append('\n');
+
+                    m_Builder.Append("biomass ").Append(economy.Biomass.ToString("F0"))
+                             .Append("   scrap ").Append(economy.MetalScrap.ToString("F0")).Append('\n');
+                }
+
                 if (!m_GridQuery.IsEmpty)
                 {
                     var grid = m_EntityManager.GetComponentObject<GridData>(m_GridQuery.GetSingletonEntity());
@@ -220,6 +255,9 @@ namespace ZeroSynth.Authoring
             m_ActiveAgents.Dispose();
             m_AllAgents.Dispose();
             m_GridQuery.Dispose();
+            m_RunQuery.Dispose();
+            m_PoweredTurrets.Dispose();
+            m_AllTurrets.Dispose();
         }
     }
 }

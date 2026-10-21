@@ -95,10 +95,15 @@ namespace ZeroSynth
             var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
             var activeLookup = SystemAPI.GetComponentLookup<Active>();
 
+            SystemAPI.TryGetSingleton<SpawnProfile>(out var profile);
+            float biomass = 0f;
+
             while (buffer.Deaths.TryDequeue(out var entity))
             {
                 if (!activeLookup.HasComponent(entity))
                     continue;
+
+                biomass += profile.BiomassPerKill;
 
                 // Disabling Active drops it out of every gameplay query, and
                 // parking it below the map takes it out of the view frustum,
@@ -112,6 +117,11 @@ namespace ZeroSynth
                     transformLookup[entity] = transform;
                 }
             }
+
+            // Accumulated across the whole drain, so the economy takes one
+            // write per frame rather than one per corpse.
+            if (biomass > 0f && SystemAPI.HasSingleton<Economy>())
+                SystemAPI.GetSingletonRW<Economy>().ValueRW.Biomass += biomass;
         }
     }
 }

@@ -32,8 +32,19 @@ namespace ZeroSynth.Authoring
         [Tooltip("Hard ceiling on concurrent agents. Allocated once at load.")]
         [SerializeField, Min(1)] int m_PoolSize = 8192;
 
-        [Tooltip("How many to activate at startup.")]
-        [SerializeField, Min(0)] int m_InitialCount = 2000;
+        [Header("Waves")]
+        [SerializeField] uint m_RunSeed = 20261021;
+        [SerializeField, Min(1)] int m_BaseWaveCount = 400;
+
+        [Tooltip("Fractional growth per wave. 0.25 = +25% each wave.")]
+        [SerializeField, Min(0f)] float m_CountGrowth = 0.3f;
+
+        [SerializeField, Min(0f)] float m_PrepareDuration = 8f;
+        [SerializeField, Min(1f)] float m_SpawnRate = 120f;
+        [SerializeField, Min(0f)] float m_SpeedGrowth = 0.04f;
+        [SerializeField, Min(0f)] float m_ScrapPerWave = 150f;
+        [SerializeField, Min(0f)] float m_BiomassPerKill = 1f;
+        [SerializeField, Min(0f)] float m_StartingScrap = 400f;
 
         [Header("Swarm")]
         [SerializeField, Min(1f)] float m_SpawnInnerRadius = 45f;
@@ -83,12 +94,68 @@ namespace ZeroSynth.Authoring
 
             CreateTargetSingleton();
             CreateDamageBuffer();
+            CreateRunSingletons();
             AllocatePool();
 
-            int activated = Activate(math.min(m_InitialCount, m_Pool.Length));
-            Debug.Log($"[ZeroSynth] Pool {m_Pool.Length}, activated {activated}.");
+            Debug.Log($"[ZeroSynth] Pool {m_Pool.Length} allocated. Wave director will release from it.");
 
             m_Initialised = true;
+        }
+
+        /// <summary>
+        /// Spawning lives in WaveDirectorSystem, so the parameters it needs
+        /// are published as singletons rather than read off this component.
+        /// </summary>
+        void CreateRunSingletons()
+        {
+            var entity = m_EntityManager.CreateEntity();
+            m_EntityManager.SetName(entity, "Run");
+
+            m_EntityManager.AddComponentData(entity, new SimClock
+            {
+                Paused = false,
+                Speed = 1f,
+                Elapsed = 0f
+            });
+
+            m_EntityManager.AddComponentData(entity, new Economy
+            {
+                Biomass = 0f,
+                MetalScrap = m_StartingScrap
+            });
+
+            m_EntityManager.AddComponentData(entity, new SpawnProfile
+            {
+                InnerRadius = m_SpawnInnerRadius,
+                OuterRadius = m_SpawnOuterRadius,
+                MinSpeed = m_MinSpeed,
+                MaxSpeed = m_MaxSpeed,
+                MaxHealth = m_MaxHealth,
+                BiomassPerKill = m_BiomassPerKill
+            });
+
+            m_EntityManager.AddComponentData(entity, new WaveConfig
+            {
+                Seed = m_RunSeed,
+                BaseCount = m_BaseWaveCount,
+                CountGrowth = m_CountGrowth,
+                PrepareDuration = m_PrepareDuration,
+                SpawnRate = m_SpawnRate,
+                SpeedGrowth = m_SpeedGrowth,
+                ScrapPerWave = m_ScrapPerWave
+            });
+
+            // Starts in Preparing with the clock already running, so the first
+            // wave arrives after one prep window rather than instantly.
+            m_EntityManager.AddComponentData(entity, new WaveState
+            {
+                Index = 0,
+                Phase = WavePhase.Preparing,
+                Timer = m_PrepareDuration,
+                Remaining = 0,
+                SpawnAccumulator = 0f,
+                Released = 0
+            });
         }
 
         void Update()
@@ -141,40 +208,6 @@ namespace ZeroSynth.Authoring
             }
 
             m_EntityManager.DestroyEntity(prototype);
-        }
-
-        /// <summary>Brings <paramref name="count"/> dormant agents into the world.</summary>
-        public int Activate(int count)
-        {
-            if (!m_Pool.IsCreated) return 0;
-
-            int activated = 0;
-            for (int i = 0; i < m_Pool.Length && activated < count; i++)
-            {
-                var entity = m_Pool[i];
-                if (m_EntityManager.IsComponentEnabled<Active>(entity))
-                    continue;
-
-                float angle = m_Random.NextFloat(0f, math.PI * 2f);
-                float radius = m_Random.NextFloat(m_SpawnInnerRadius, m_SpawnOuterRadius);
-                float3 position = new float3(math.cos(angle) * radius, 0f, math.sin(angle) * radius);
-
-                m_EntityManager.SetComponentData(entity, LocalTransform.FromPosition(position));
-                m_EntityManager.SetComponentData(entity, new HordeAgent
-                {
-                    Speed = m_Random.NextFloat(m_MinSpeed, m_MaxSpeed)
-                });
-                m_EntityManager.SetComponentData(entity, new Health
-                {
-                    Current = m_MaxHealth,
-                    Max = m_MaxHealth
-                });
-                m_EntityManager.SetComponentEnabled<Active>(entity, true);
-
-                activated++;
-            }
-
-            return activated;
         }
 
         /// <summary>Live agent count. Used by the debug tooling.</summary>
