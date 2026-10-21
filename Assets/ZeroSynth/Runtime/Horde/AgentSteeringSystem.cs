@@ -47,6 +47,7 @@ namespace ZeroSynth
                 DeltaTime = SystemAPI.Time.DeltaTime,
                 Config = SystemAPI.GetSingleton<GridConfig>(),
                 Direction = grid.Direction,
+                Flags = grid.Flags,
                 Goal = target.Position
             }.ScheduleParallel(state.Dependency);
         }
@@ -61,6 +62,7 @@ namespace ZeroSynth
         public float3 Goal;
 
         [ReadOnly] public NativeArray<float2> Direction;
+        [ReadOnly] public NativeArray<CellFlags> Flags;
 
         public void Execute(ref LocalTransform transform, in HordeAgent agent)
         {
@@ -88,8 +90,21 @@ namespace ZeroSynth
                 heading = toGoal * math.rsqrt(distSq);
             }
 
-            transform.Position += heading * agent.Speed * DeltaTime;
+            // Always face the way we want to go, even when blocked — a
+            // stalled agent chewing a wall should still be looking at it.
             transform.Rotation = quaternion.LookRotationSafe(heading, math.up());
+
+            float3 next = transform.Position + heading * agent.Speed * DeltaTime;
+
+            // Walls are cheap to path through in the cost field but solid in
+            // the world. The field routes the swarm at the weakest segment;
+            // this is what makes them pile up against it instead of walking
+            // through, and AgentAttackSystem then chews it down.
+            int2 nextCell = Config.WorldToCell(next);
+            if (Config.InBounds(nextCell) && (Flags[Config.Index(nextCell)] & CellFlags.Wall) != 0)
+                return;
+
+            transform.Position = next;
         }
     }
 

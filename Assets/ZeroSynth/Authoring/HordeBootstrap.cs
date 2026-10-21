@@ -42,6 +42,13 @@ namespace ZeroSynth.Authoring
         [SerializeField] float m_MaxSpeed = 4f;
         [SerializeField] float m_MaxHealth = 30f;
 
+        [Header("Melee")]
+        [SerializeField, Min(0f)] float m_AgentDamage = 8f;
+        [SerializeField, Min(0.1f)] float m_AgentAttackRate = 1f;
+
+        [Tooltip("How far ahead a wall is attacked from. Roughly one cell.")]
+        [SerializeField, Min(0.1f)] float m_AgentReach = 1.2f;
+
         [Header("Objective")]
         [SerializeField] Transform m_Target;
 
@@ -205,6 +212,13 @@ namespace ZeroSynth.Authoring
             m_EntityManager.AddComponentData(prototype, LocalTransform.FromPosition(float3.zero));
             m_EntityManager.AddComponentData(prototype, new HordeAgent { Speed = 1f });
             m_EntityManager.AddComponentData(prototype, new Health { Current = m_MaxHealth, Max = m_MaxHealth });
+            m_EntityManager.AddComponentData(prototype, new AgentCombat
+            {
+                Damage = m_AgentDamage,
+                AttackRate = m_AgentAttackRate,
+                Reach = m_AgentReach,
+                Cooldown = 0f
+            });
             m_EntityManager.AddComponent<Active>(prototype);
             m_EntityManager.AddComponent<Prefab>(prototype);
 

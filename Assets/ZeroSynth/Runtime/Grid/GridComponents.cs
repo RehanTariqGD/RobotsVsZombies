@@ -76,6 +76,12 @@ namespace ZeroSynth
         /// <summary>Unit XZ heading toward the objective, per cell.</summary>
         public NativeArray<float2> Direction;
 
+        /// <summary>
+        /// Structure occupying each cell, or Entity.Null. Lets a blocked agent
+        /// find the wall in front of it without any spatial query.
+        /// </summary>
+        public NativeArray<Entity> Occupant;
+
         /// <summary>Set by anything that changes Flags or ExtraCost.</summary>
         public bool Dirty = true;
 
@@ -92,6 +98,7 @@ namespace ZeroSynth
             ExtraCost = new NativeArray<float>(cellCount, Allocator.Persistent);
             Integration = new NativeArray<float>(cellCount, Allocator.Persistent);
             Direction = new NativeArray<float2>(cellCount, Allocator.Persistent);
+            Occupant = new NativeArray<Entity>(cellCount, Allocator.Persistent);
         }
 
         public void Dispose()
@@ -100,6 +107,7 @@ namespace ZeroSynth
             if (ExtraCost.IsCreated) ExtraCost.Dispose();
             if (Integration.IsCreated) Integration.Dispose();
             if (Direction.IsCreated) Direction.Dispose();
+            if (Occupant.IsCreated) Occupant.Dispose();
         }
     }
 }
