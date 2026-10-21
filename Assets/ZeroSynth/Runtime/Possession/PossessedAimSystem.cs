@@ -38,7 +38,7 @@ namespace ZeroSynth
         public void OnUpdate(ref SystemState state)
         {
             var possession = SystemAPI.GetSingleton<PossessionState>();
-            if (possession.Current == Entity.Null || !possession.HasAim)
+            if (possession.Mode != PossessionMode.Turret || !possession.HasAim)
                 return;
 
             var grid = state.EntityManager.GetComponentObject<SpatialGridData>(
@@ -57,7 +57,7 @@ namespace ZeroSynth
 
     [BurstCompile]
     [WithAll(typeof(Powered))]
-    [WithAll(typeof(Possessed))]
+    [WithAll(typeof(ManualAim))]
     public partial struct AimTargetJob : IJobEntity
     {
         public SpatialGridConfig Config;

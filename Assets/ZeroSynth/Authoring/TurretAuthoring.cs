@@ -68,6 +68,12 @@ namespace ZeroSynth.Authoring
             m_EntityManager.AddComponent<Possessed>(m_Entity);
             m_EntityManager.SetComponentEnabled<Possessed>(m_Entity, false);
 
+            // Must be present even when unused: auto-targeting queries for
+            // WithDisabled(ManualAim), and an entity lacking the component
+            // does not match that at all — the turret would never fire.
+            m_EntityManager.AddComponent<ManualAim>(m_Entity);
+            m_EntityManager.SetComponentEnabled<ManualAim>(m_Entity, false);
+
             // Consumer, not a relay: the network cannot route power through a
             // turret. Starts unpowered until the flood reaches it.
             m_EntityManager.AddComponentData(m_Entity, new PowerNode

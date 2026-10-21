@@ -47,7 +47,7 @@ namespace ZeroSynth
 
     [BurstCompile]
     [WithAll(typeof(Powered))]
-    [WithDisabled(typeof(Possessed))]
+    [WithDisabled(typeof(ManualAim))]
     public partial struct AcquireTargetJob : IJobEntity
     {
         public SpatialGridConfig Config;

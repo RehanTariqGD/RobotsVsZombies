@@ -625,6 +625,59 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &950283479
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 950283481}
+  - component: {fileID: 950283480}
+  m_Layer: 0
+  m_Name: Goliath
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &950283480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950283479}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3c03b3590dbde84ea4de04669e2b9ca, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.MechAuthoring
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Material: {fileID: 2100000, guid: b56ff5bbf1ced704e8667aa7391402f0, type: 2}
+  m_MoveSpeed: 7
+  m_TurnSpeed: 4
+  m_Health: 1200
+  m_Range: 20
+  m_FireRate: 8
+  m_Damage: 14
+  m_SplashRadius: 3
+--- !u!4 &950283481
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 950283479}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 6, y: 2, z: 4}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &952082818
 GameObject:
   m_ObjectHideFlags: 0
@@ -1039,6 +1092,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1638251439}
   - component: {fileID: 1638251438}
+  - component: {fileID: 1638251440}
   m_Layer: 0
   m_Name: PossessionController
   m_TagString: Untagged
@@ -1061,6 +1115,7 @@ MonoBehaviour:
   m_Camera: {fileID: 957169295}
   m_GrabRadius: 6
   m_GroundHeight: 0
+  m_StickRange: 160
 --- !u!4 &1638251439
 Transform:
   m_ObjectHideFlags: 0
@@ -1076,6 +1131,30 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1638251440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1638251437}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b3e0614747447545a911d571281f7ed, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.PossessionCameraRig
+  m_Camera: {fileID: 957169295}
+  m_TacticalProfile:
+    FarClip: 400
+    ShadowDistance: 50
+    LodBias: 1
+  m_MechOffset: {x: 0, y: 18, z: -22}
+  m_MechPitch: 35
+  m_FollowLerp: 6
+  m_MechProfile:
+    FarClip: 120
+    ShadowDistance: 25
+    LodBias: 0.6
 --- !u!1 &1917565877
 GameObject:
   m_ObjectHideFlags: 0
@@ -1316,3 +1395,4 @@ SceneRoots:
   - {fileID: 1349804225}
   - {fileID: 952082820}
   - {fileID: 1638251439}
+  - {fileID: 950283481}
