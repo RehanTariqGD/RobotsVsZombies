@@ -46,6 +46,7 @@ namespace ZeroSynth
     }
 
     [BurstCompile]
+    [WithAll(typeof(Powered))]
     [WithDisabled(typeof(Possessed))]
     public partial struct AcquireTargetJob : IJobEntity
     {
@@ -160,6 +161,7 @@ namespace ZeroSynth
     }
 
     [BurstCompile]
+    [WithAll(typeof(Powered))]
     public partial struct FireJob : IJobEntity
     {
         public float DeltaTime;

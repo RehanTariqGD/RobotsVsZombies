@@ -68,6 +68,16 @@ namespace ZeroSynth.Authoring
             m_EntityManager.AddComponent<Possessed>(m_Entity);
             m_EntityManager.SetComponentEnabled<Possessed>(m_Entity, false);
 
+            // Consumer, not a relay: the network cannot route power through a
+            // turret. Starts unpowered until the flood reaches it.
+            m_EntityManager.AddComponentData(m_Entity, new PowerNode
+            {
+                SupplyRange = 0f,
+                IsSource = false
+            });
+            m_EntityManager.AddComponent<Powered>(m_Entity);
+            m_EntityManager.SetComponentEnabled<Powered>(m_Entity, false);
+
             if (m_Mesh != null && m_Material != null)
                 AddRendering();
         }
