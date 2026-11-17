@@ -45,6 +45,33 @@ breaks the culling and impostor strategy the frame budget depends on.
 Player settings to match: `defaultScreenOrientation` auto-rotate with
 **landscape left and right only**, both portrait options off.
 
+## R6 — Claude leads; Codex is a worker
+
+Claude owns design, mapping, architecture and integration decisions. Codex is
+reached through `mcp__codex_bridge__ask_codex` and is delegated bounded
+tasks: art and concept images, Blender scripts, bulk calculation, data and
+tooling scripts. Claude reviews everything Codex returns before it goes into
+the project. Codex output is never committed unread.
+
+Codex is read-only by default. Writing needs `write=true` inside an approved
+git worktree, so anything it produces is saved to a scratch folder and moved
+in by Claude.
+
+## R7 — Art follows the GDD budget
+
+Low-poly, faceted, one shared 256x256 palette atlas, one material per unit
+family so instancing holds. Triangle targets per the LOD ladder in the
+technical review: LOD0 ~400, LOD1 ~150, LOD2 ~60, LOD3 impostor ~12.
+Every delegated art task states these numbers. Source `.blend` files stay out
+of git (no LFS); commit exported FBX and textures only.
+
+## R8 — Blender is run headless
+
+Blender 5.2 lives at `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe`
+and is not on PATH. Scripted work uses `blender.exe -b -P script.py`. Scripts
+go in `Tools/Blender/` and are committed; they are the reproducible source of
+every mesh.
+
 ---
 
 ## Project facts

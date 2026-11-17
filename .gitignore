@@ -133,3 +133,7 @@ keystore.properties
 # content. Packages/manifest.json pins com.unity.ai.assistant 2.15.0-pre.2, so
 # a fresh clone resolves it from the Unity registry instead.
 /[Pp]ackages/com.unity.ai.assistant/
+
+# Blender script outputs. Exported FBX/textures are reviewed, then copied into Assets/.
+/Tools/Blender/out/
+*.blend1
