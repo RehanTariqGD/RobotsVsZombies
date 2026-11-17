@@ -155,8 +155,13 @@ def export_fbx(obj, path):
         filepath=path,
         use_selection=True,
         apply_scale_options="FBX_SCALE_ALL",
-        axis_forward="-Z",
+        # Scripts model facing Blender +Y. Forward "Z" lands that on Unity +Z,
+        # which is where LookRotation points agents at their heading.
+        axis_forward="Z",
         axis_up="Y",
+        # Without this the axis settings are only written as metadata, and
+        # Unity imports the mesh lying on its side (Blender Z up -> Unity Z).
+        bake_space_transform=True,
         bake_anim=False,
         add_leaf_bones=False,
     )
