@@ -11,6 +11,9 @@
                     <ui:VisualElement name="build-bar" class="panel build-bar blocks-input">
                         <ui:Button name="tactical-pause-button" text="PAUSE" class="button build-button" />
                         <ui:VisualElement name="build-options" class="build-options" />
+                        <ui:Button name="rotate-button" text="ROTATE" class="button build-button" style="display: none;" />
+                        <ui:Button name="repair-button" text="REPAIR" class="button build-button" />
+                        <ui:Button name="sell-button" text="SELL" class="button build-button" />
                         <ui:Button name="cancel-button" text="CANCEL" class="button button--danger build-button" style="display: none;" />
                     </ui:VisualElement>
                 </ui:VisualElement>

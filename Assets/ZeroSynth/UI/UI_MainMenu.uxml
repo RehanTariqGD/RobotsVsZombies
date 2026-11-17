@@ -12,6 +12,7 @@
                     <ui:Button name="play-button" text="PLAY" class="button button--primary" />
                     <ui:Button name="settings-button" text="SETTINGS" class="button" />
                     <ui:Button name="quit-button" text="QUIT" class="button button--danger" />
+                    <ui:Label name="best-label" class="label-dim" style="display: none;" />
                     <ui:Label name="version-label" class="label-dim version" />
                 </ui:VisualElement>
                 <ui:Instance template="Settings" name="settings-panel" class="settings-overlay" style="display: none;" />

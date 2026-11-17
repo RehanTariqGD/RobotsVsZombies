@@ -12,7 +12,7 @@ namespace ZeroSynth.UI
         GameFlow m_Flow;
         VisualElement m_Hud, m_PauseScreen, m_OutcomeScreen, m_CoreFill;
         Label m_Wave, m_Phase, m_Remaining, m_Core, m_Biomass, m_Scrap;
-        Label m_OutcomeTitle, m_OutcomeWave, m_OutcomeBiomass, m_OutcomeScrap;
+        Label m_OutcomeTitle, m_OutcomeWave, m_OutcomeBiomass, m_OutcomeScrap, m_OutcomeBest;
         Button[] m_Buttons;
         Action[] m_Actions;
         SettingsPanelController m_Settings;
@@ -41,6 +41,7 @@ namespace ZeroSynth.UI
             m_OutcomeWave = root.Q<Label>("outcome-wave");
             m_OutcomeBiomass = root.Q<Label>("outcome-biomass");
             m_OutcomeScrap = root.Q<Label>("outcome-scrap");
+            m_OutcomeBest = root.Q<Label>("outcome-best");
             m_Settings = new SettingsPanelController(root.Q("settings-panel"));
             m_SafeArea = new SafeAreaPadding(root.Q("safe-area"));
             m_Buttons = new[] {
@@ -141,6 +142,8 @@ namespace ZeroSynth.UI
                 m_OutcomeBiomass.text = $"BIOMASS {outcome.Biomass:0}";
             if (!m_HasOutcome || outcome.Scrap != m_LastOutcome.Scrap)
                 m_OutcomeScrap.text = $"SCRAP {outcome.Scrap:0}";
+            if (!m_HasOutcome || outcome.BestWave != m_LastOutcome.BestWave || outcome.NewBest != m_LastOutcome.NewBest)
+                m_OutcomeBest.text = outcome.NewBest ? $"NEW BEST: WAVE {outcome.BestWave}" : $"BEST WAVE {outcome.BestWave}";
             m_LastOutcome = outcome;
             m_LastOutcomeState = state;
             m_HasOutcome = true;

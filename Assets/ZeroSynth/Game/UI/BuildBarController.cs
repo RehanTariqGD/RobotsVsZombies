@@ -15,9 +15,10 @@ namespace ZeroSynth.UI
         GameFlow m_Flow;
         BuildController m_Build;
         VisualElement m_Screen, m_OptionsRoot;
-        Button m_PauseButton, m_CancelButton;
+        Button m_PauseButton, m_CancelButton, m_RotateButton, m_RepairButton, m_SellButton;
         Label m_Toast, m_PausedPill, m_Hint;
         int m_HintKey = -1;
+        int m_BuildHintKey;
         SafeAreaPadding m_SafeArea;
         BuildOption[] m_Options = Array.Empty<BuildOption>();
         Button[] m_Buttons = Array.Empty<Button>();
@@ -34,6 +35,9 @@ namespace ZeroSynth.UI
             m_OptionsRoot = root.Q("build-options");
             m_PauseButton = root.Q<Button>("tactical-pause-button");
             m_CancelButton = root.Q<Button>("cancel-button");
+            m_RotateButton = root.Q<Button>("rotate-button");
+            m_RepairButton = root.Q<Button>("repair-button");
+            m_SellButton = root.Q<Button>("sell-button");
             m_Toast = root.Q<Label>("build-toast");
             m_PausedPill = root.Q<Label>("paused-pill");
             m_Hint = root.Q<Label>("controls-hint");
@@ -41,6 +45,9 @@ namespace ZeroSynth.UI
             m_SafeArea = new SafeAreaPadding(root.Q("safe-area"));
             m_PauseButton.clicked += TogglePause;
             m_CancelButton.clicked += Cancel;
+            m_RotateButton.clicked += Rotate;
+            m_RepairButton.clicked += SelectRepair;
+            m_SellButton.clicked += SelectSell;
             ApplyState(GameState.Boot);
             RefreshSelection();
             BindFlow();
@@ -108,13 +115,15 @@ namespace ZeroSynth.UI
             "TAP A TURRET OR THE MECH TO TAKE CONTROL\nESC: PAUSE MENU",
             "AIMING TURRET\nHOLD AND DRAG: AIM  |  TAP IT AGAIN OR SPACE: RELEASE",
             "DRIVING MECH\nDRAG OR WASD: MOVE  |  TAP IT AGAIN OR SPACE: RELEASE",
-            "BUILDING\nTAP THE GROUND TO PLACE  |  CANCEL WHEN DONE"
+            "BUILDING\nTAP THE GROUND TO PLACE  |  R OR ROTATE TURNS IT  |  CANCEL WHEN DONE",
+            "REPAIR\nTAP A DAMAGED STRUCTURE  |  COSTS SCRAP PER MISSING HEALTH",
+            "SELL\nTAP A STRUCTURE FOR HALF ITS COST BACK"
         };
 
         void RefreshHint()
         {
             int key;
-            if (m_Build != null && m_Build.HasSelection) key = 3;
+            if (m_BuildHintKey != 0) key = m_BuildHintKey;
             else if (PossessionController.ActiveMode == PossessionMode.Turret) key = 1;
             else if (PossessionController.ActiveMode == PossessionMode.Mech) key = 2;
             else key = 0;
@@ -149,10 +158,21 @@ namespace ZeroSynth.UI
 
         void RefreshSelection()
         {
+            var mode = m_Build != null ? m_Build.Mode : BuildMode.None;
             bool selected = m_Build != null && m_Build.HasSelection;
             m_CancelButton.style.display = selected ? DisplayStyle.Flex : DisplayStyle.None;
+            m_RotateButton.style.display = m_Build != null && m_Build.CanRotate ? DisplayStyle.Flex : DisplayStyle.None;
+            m_RepairButton.EnableInClassList("build-option--selected", mode == BuildMode.Repair);
+            m_SellButton.EnableInClassList("build-option--selected", mode == BuildMode.Sell);
             for (int i = 0; i < m_Options.Length; i++)
-                m_Buttons[i].EnableInClassList("build-option--selected", selected && m_Build.Selected == m_Options[i].Kind);
+                m_Buttons[i].EnableInClassList("build-option--selected", mode == BuildMode.Place && m_Build.Selected == m_Options[i].Kind);
+            m_BuildHintKey = mode switch {
+                BuildMode.Place => 3,
+                BuildMode.Repair => 4,
+                BuildMode.Sell => 5,
+                _ => 0
+            };
+            RefreshHint();
         }
 
         void RefreshPause()
@@ -175,8 +195,28 @@ namespace ZeroSynth.UI
         void Select(BuildOption option)
         {
             if (m_Build == null || m_Flow == null || m_Flow.State != GameState.Playing) return;
-            if (m_Build.HasSelection && m_Build.Selected == option.Kind) m_Build.Cancel();
+            if (m_Build.Mode == BuildMode.Place && m_Build.Selected == option.Kind) m_Build.Cancel();
             else m_Build.Select(option.Kind);
+        }
+
+        void Rotate()
+        {
+            if (m_Build == null || m_Flow == null || m_Flow.State != GameState.Playing) return;
+            m_Build.Rotate();
+        }
+
+        void SelectRepair()
+        {
+            if (m_Build == null || m_Flow == null || m_Flow.State != GameState.Playing) return;
+            if (m_Build.Mode == BuildMode.Repair) m_Build.Cancel();
+            else m_Build.SelectRepair();
+        }
+
+        void SelectSell()
+        {
+            if (m_Build == null || m_Flow == null || m_Flow.State != GameState.Playing) return;
+            if (m_Build.Mode == BuildMode.Sell) m_Build.Cancel();
+            else m_Build.SelectSell();
         }
 
         void Cancel()
@@ -237,6 +277,9 @@ namespace ZeroSynth.UI
             UnbindBuild();
             m_PauseButton.clicked -= TogglePause;
             m_CancelButton.clicked -= Cancel;
+            m_RotateButton.clicked -= Rotate;
+            m_RepairButton.clicked -= SelectRepair;
+            m_SellButton.clicked -= SelectSell;
             m_SafeArea.Dispose();
             ApplyState(GameState.Boot);
         }

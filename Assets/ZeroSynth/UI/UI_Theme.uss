@@ -94,3 +94,7 @@
 
 /* Controls hint */
 .controls-hint { position: absolute; left: 16px; bottom: 16px; max-width: 30%; white-space: normal; padding: 10px 14px; background-color: rgba(14, 18, 22, 0.75); border-width: 1px; border-color: var(--border); border-radius: 3px; letter-spacing: 1px; }
+
+/* Build tools */
+.build-bar { max-width: 100%; flex-wrap: wrap; }
+.build-options { flex-shrink: 1; flex-wrap: wrap; }

@@ -27,6 +27,10 @@ namespace ZeroSynth.UI
             m_SettingsButton = root.Q<Button>("settings-button");
             m_Quit = root.Q<Button>("quit-button");
             root.Q<Label>("version-label").text = $"BUILD {Application.version}";
+            var bestLabel = root.Q<Label>("best-label");
+            int bestWave = GameFlow.Instance != null ? GameFlow.Instance.BestWave : 0;
+            bestLabel.style.display = bestWave > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            if (bestWave > 0) bestLabel.text = $"BEST WAVE {bestWave}";
             if (m_Backdrop != null)
                 root.Q("backdrop").style.backgroundImage = new StyleBackground(m_Backdrop);
             if (m_Logo != null)

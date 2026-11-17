@@ -44,6 +44,7 @@
                         <ui:Label name="outcome-wave" class="stat-row" />
                         <ui:Label name="outcome-biomass" class="stat-row" />
                         <ui:Label name="outcome-scrap" class="stat-row" />
+                        <ui:Label name="outcome-best" class="stat-row" />
                         <ui:VisualElement class="button-row">
                             <ui:Button name="outcome-restart-button" text="RESTART" class="button button--primary" />
                             <ui:Button name="outcome-menu-button" text="MAIN MENU" class="button" />
