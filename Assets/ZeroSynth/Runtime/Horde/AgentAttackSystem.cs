@@ -52,6 +52,8 @@ namespace ZeroSynth
                 Direction = grid.Direction,
                 Writer = buffer.Pending.AsParallelWriter()
             }.ScheduleParallel(state.Dependency);
+
+            state.CompleteDependency();
         }
     }
 

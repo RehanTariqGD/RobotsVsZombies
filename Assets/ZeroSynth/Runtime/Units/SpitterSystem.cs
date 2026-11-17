@@ -67,6 +67,9 @@ namespace ZeroSynth
             state.Dependency = JobHandle.CombineDependencies(
                 entities.Dispose(job),
                 positions.Dispose(job));
+
+            // Writes the shared damage queue; see TurretFireSystem.
+            state.CompleteDependency();
         }
     }
 

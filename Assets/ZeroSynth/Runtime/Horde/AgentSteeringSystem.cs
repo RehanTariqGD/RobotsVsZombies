@@ -50,6 +50,12 @@ namespace ZeroSynth
                 Flags = grid.Flags,
                 Goal = target.Position
             }.ScheduleParallel(state.Dependency);
+
+            // The grid arrays belong to a managed singleton, so the safety
+            // system cannot order jobs against them. Complete here, or the next
+            // frame's main-thread wall update would write arrays this job may
+            // still be reading.
+            state.CompleteDependency();
         }
     }
 

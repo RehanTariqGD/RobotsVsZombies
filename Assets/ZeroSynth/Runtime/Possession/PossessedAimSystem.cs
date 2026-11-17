@@ -52,6 +52,8 @@ namespace ZeroSynth
                 Positions = grid.Positions,
                 AimPoint = possession.AimPoint
             }.ScheduleParallel(state.Dependency);
+
+            state.CompleteDependency();
         }
     }
 

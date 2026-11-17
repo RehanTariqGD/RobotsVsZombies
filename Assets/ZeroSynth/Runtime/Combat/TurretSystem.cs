@@ -42,6 +42,10 @@ namespace ZeroSynth
                 Health = SystemAPI.GetComponentLookup<Health>(true),
                 Agents = SystemAPI.GetComponentLookup<HordeAgent>(true)
             }.ScheduleParallel(state.Dependency);
+
+            // Reads the spatial grid's arrays, which another system rewrites
+            // every frame. See AgentSteeringSystem for why this completes.
+            state.CompleteDependency();
         }
     }
 
@@ -157,6 +161,11 @@ namespace ZeroSynth
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
                 Writer = buffer.Pending.AsParallelWriter()
             }.ScheduleParallel(state.Dependency);
+
+            // Several systems write the damage queue from jobs, and the queue
+            // belongs to a managed singleton, so nothing orders them. Complete
+            // before the next producer schedules.
+            state.CompleteDependency();
         }
     }
 

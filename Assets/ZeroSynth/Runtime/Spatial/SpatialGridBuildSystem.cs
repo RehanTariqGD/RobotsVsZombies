@@ -67,6 +67,11 @@ namespace ZeroSynth
             state.Dependency = JobHandle.CombineDependencies(
                 scratchEntities.Dispose(build),
                 scratchPositions.Dispose(build));
+
+            // This job rewrites arrays that the turret systems read next. They
+            // live on a managed singleton, so nothing orders the two; complete
+            // before they schedule.
+            state.CompleteDependency();
         }
     }
 
