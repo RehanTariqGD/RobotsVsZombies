@@ -53,8 +53,12 @@ namespace ZeroSynth
         }
     }
 
+    // Holding agents are standing to attack; underground ones are driven by
+    // BurrowSystem and ignore the field. WithNone matches entities that lack
+    // the component or have it disabled, so ordinary agents are unaffected.
     [BurstCompile]
     [WithAll(typeof(Active))]
+    [WithNone(typeof(Holding), typeof(Underground))]
     public partial struct FlowFieldSteerJob : IJobEntity
     {
         public float DeltaTime;
@@ -110,6 +114,7 @@ namespace ZeroSynth
 
     [BurstCompile]
     [WithAll(typeof(Active))]
+    [WithNone(typeof(Holding), typeof(Underground))]
     public partial struct DirectSteerJob : IJobEntity
     {
         public float DeltaTime;

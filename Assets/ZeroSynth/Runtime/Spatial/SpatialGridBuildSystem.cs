@@ -22,8 +22,11 @@ namespace ZeroSynth
         {
             m_DataQuery = state.GetEntityQuery(ComponentType.ReadOnly<SpatialGridData>());
 
+            // Underground agents are left out of the grid, which is what makes
+            // them untargetable until they surface.
             m_AgentQuery = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<HordeAgent, Active, LocalTransform>()
+                .WithNone<Underground>()
                 .Build(ref state);
 
             state.RequireForUpdate<SpatialGridConfig>();

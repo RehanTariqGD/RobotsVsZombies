@@ -35,6 +35,9 @@ namespace ZeroSynth.Authoring
 
         [SerializeField] TargetingStance m_Stance = TargetingStance.Closest;
 
+        [Header("Durability")]
+        [SerializeField, Min(1f)] float m_Health = 400f;
+
         Entity m_Entity;
         EntityManager m_EntityManager;
 
@@ -59,6 +62,19 @@ namespace ZeroSynth.Authoring
                 Damage = m_Damage,
                 SplashRadius = m_SplashRadius,
                 Cooldown = 0f
+            });
+            // Structure + Health make it a valid target for spitters. A dead
+            // turret is silenced by the power flood, which stops powering any
+            // node whose health has reached zero.
+            m_EntityManager.AddComponentData(m_Entity, new Structure
+            {
+                Kind = StructureKind.Turret,
+                Footprint = new Unity.Mathematics.int2(1, 1)
+            });
+            m_EntityManager.AddComponentData(m_Entity, new Health
+            {
+                Current = m_Health,
+                Max = m_Health
             });
             m_EntityManager.AddComponentData(m_Entity, new TurretStance { Value = m_Stance });
             m_EntityManager.AddComponentData(m_Entity, new TurretTarget { Value = Entity.Null });

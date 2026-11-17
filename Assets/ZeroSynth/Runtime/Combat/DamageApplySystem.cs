@@ -95,7 +95,7 @@ namespace ZeroSynth
             var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
             var activeLookup = SystemAPI.GetComponentLookup<Active>();
 
-            SystemAPI.TryGetSingleton<SpawnProfile>(out var profile);
+            var bountyLookup = SystemAPI.GetComponentLookup<Bounty>(true);
             float biomass = 0f;
 
             while (buffer.Deaths.TryDequeue(out var entity))
@@ -103,7 +103,8 @@ namespace ZeroSynth
                 if (!activeLookup.HasComponent(entity))
                     continue;
 
-                biomass += profile.BiomassPerKill;
+                if (bountyLookup.HasComponent(entity))
+                    biomass += bountyLookup[entity].Biomass;
 
                 // Disabling Active drops it out of every gameplay query, and
                 // parking it below the map takes it out of the view frustum,

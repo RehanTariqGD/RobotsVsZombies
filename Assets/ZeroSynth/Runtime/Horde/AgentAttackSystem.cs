@@ -57,6 +57,7 @@ namespace ZeroSynth
 
     [BurstCompile]
     [WithAll(typeof(Active))]
+    [WithNone(typeof(Underground))]
     public partial struct AttackWallJob : IJobEntity
     {
         public float DeltaTime;

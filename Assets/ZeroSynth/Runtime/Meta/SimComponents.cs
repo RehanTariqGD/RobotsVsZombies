@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace ZeroSynth
 {
@@ -43,12 +44,15 @@ namespace ZeroSynth
     {
         public float InnerRadius;
         public float OuterRadius;
-        public float MinSpeed;
-        public float MaxSpeed;
-        public float MaxHealth;
 
-        /// <summary>Biomass awarded per kill.</summary>
-        public float BiomassPerKill;
+        /// <summary>Y a tunnelling agent travels at. Below the ground plane, so it is hidden.</summary>
+        public float BurrowDepth;
+
+        /// <summary>Distance from the objective at which a tunnelling agent surfaces.</summary>
+        public float BurrowSurfaceRadius;
+
+        /// <summary>Tunnelling is faster than walking; the dirt does not path around walls.</summary>
+        public float BurrowSpeedMultiplier;
     }
 
     public struct WaveConfig : IComponentData
@@ -56,7 +60,17 @@ namespace ZeroSynth
         /// <summary>Run seed. Wave composition is derived from this, so a run is reproducible.</summary>
         public uint Seed;
 
+        /// <summary>Runner count in wave 1. Other kinds scale from their own base.</summary>
         public int BaseCount;
+
+        public int SpitterBase;
+        public int SpitterFirstWave;
+
+        public int BurrowerBase;
+        public int BurrowerFirstWave;
+
+        /// <summary>A Titan arrives every Nth wave. Zero disables bosses.</summary>
+        public int TitanEvery;
 
         /// <summary>Fractional growth per wave. 0.25 means +25% each time.</summary>
         public float CountGrowth;
@@ -84,8 +98,13 @@ namespace ZeroSynth
         /// <summary>Counts down in Preparing, up elsewhere.</summary>
         public float Timer;
 
-        /// <summary>Still to be released this wave.</summary>
-        public int Remaining;
+        /// <summary>
+        /// Still to be released this wave, per kind: x Runner, y Spitter,
+        /// z Burrower, w Titan.
+        /// </summary>
+        public int4 Remaining;
+
+        public int RemainingTotal => Remaining.x + Remaining.y + Remaining.z + Remaining.w;
 
         /// <summary>Fractional spawn carry, so low rates still emit smoothly.</summary>
         public float SpawnAccumulator;

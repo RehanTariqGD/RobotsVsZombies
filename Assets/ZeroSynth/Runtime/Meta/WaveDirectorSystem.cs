@@ -8,7 +8,7 @@ namespace ZeroSynth
 {
     /// <summary>
     /// Drives the prepare / spawn / fight cycle and releases agents from the
-    /// pool.
+    /// pool, mixing the unit kinds.
     /// </summary>
     /// <remarks>
     /// Composition is derived from the run seed and the wave index, so a run
@@ -16,9 +16,14 @@ namespace ZeroSynth
     /// and a wave number instead of several thousand agents.
     ///
     /// Spawning never creates entities. It takes dormant ones from the pool
-    /// and enables them, so a wave costs no structural changes at all. The
-    /// pool is therefore a hard ceiling: a wave that wants more agents than
-    /// remain simply gets fewer.
+    /// and enables them, so a wave costs no structural changes at all. Each
+    /// kind has its own pool, so a wave that wants more of a kind than remain
+    /// simply gets fewer of that kind.
+    ///
+    /// Each frame picks ONE kind, weighted by how much of it is left in the
+    /// wave, and spends that frame's whole spawn budget on it. Over many
+    /// frames that mixes the kinds in proportion, and it needs only a single
+    /// pool lookup per frame rather than one per agent.
     /// </remarks>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(AgentSteeringSystem))]
@@ -30,7 +35,7 @@ namespace ZeroSynth
         public void OnCreate(ref SystemState state)
         {
             m_DormantQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<HordeAgent>()
+                .WithAll<HordeAgent, AgentKind>()
                 .WithDisabled<Active>()
                 .Build(ref state);
 
@@ -41,6 +46,7 @@ namespace ZeroSynth
             state.RequireForUpdate<WaveConfig>();
             state.RequireForUpdate<WaveState>();
             state.RequireForUpdate<SpawnProfile>();
+            state.RequireForUpdate<UnitTable>();
             state.RequireForUpdate<HordeTarget>();
         }
 
@@ -54,6 +60,7 @@ namespace ZeroSynth
 
             var config = SystemAPI.GetSingleton<WaveConfig>();
             var profile = SystemAPI.GetSingleton<SpawnProfile>();
+            var table = SystemAPI.GetSingleton<UnitTable>();
             var target = SystemAPI.GetSingleton<HordeTarget>();
 
             var waveRw = SystemAPI.GetSingletonRW<WaveState>();
@@ -69,8 +76,8 @@ namespace ZeroSynth
 
                 case WavePhase.Spawning:
                     wave.Timer += dt;
-                    Release(ref state, ref wave, config, profile, target, dt);
-                    if (wave.Remaining <= 0)
+                    Release(ref state, ref wave, config, profile, table, target, dt);
+                    if (wave.RemainingTotal <= 0)
                         wave.Phase = WavePhase.Fighting;
                     break;
 
@@ -97,9 +104,32 @@ namespace ZeroSynth
             wave.Timer = 0f;
             wave.Released = 0;
             wave.SpawnAccumulator = 0f;
+            wave.Remaining = Composition(wave.Index, config);
+        }
 
-            float growth = math.pow(1f + config.CountGrowth, math.max(0, wave.Index - 1));
-            wave.Remaining = (int)math.round(config.BaseCount * growth);
+        /// <summary>
+        /// How many of each kind a wave contains. Each kind grows from its own
+        /// first wave, so a new type arrives small instead of at full size.
+        /// </summary>
+        public static int4 Composition(int index, WaveConfig config)
+        {
+            float growth = 1f + config.CountGrowth;
+
+            int runners = (int)math.round(config.BaseCount * math.pow(growth, math.max(0, index - 1)));
+
+            int spitters = 0;
+            if (config.SpitterBase > 0 && index >= config.SpitterFirstWave)
+                spitters = (int)math.round(config.SpitterBase * math.pow(growth, index - config.SpitterFirstWave));
+
+            int burrowers = 0;
+            if (config.BurrowerBase > 0 && index >= config.BurrowerFirstWave)
+                burrowers = (int)math.round(config.BurrowerBase * math.pow(growth, index - config.BurrowerFirstWave));
+
+            int titans = 0;
+            if (config.TitanEvery > 0 && index % config.TitanEvery == 0)
+                titans = 1 + index / (config.TitanEvery * 2);
+
+            return new int4(runners, spitters, burrowers, titans);
         }
 
         void Release(
@@ -107,6 +137,7 @@ namespace ZeroSynth
             ref WaveState wave,
             WaveConfig config,
             SpawnProfile profile,
+            UnitTable table,
             HordeTarget target,
             float dt)
         {
@@ -114,58 +145,105 @@ namespace ZeroSynth
 
             int budget = (int)wave.SpawnAccumulator;
             if (budget <= 0) return;
-
             wave.SpawnAccumulator -= budget;
-            budget = math.min(budget, wave.Remaining);
 
+            // Seeded on the wave index and the running release count, so the
+            // same wave of the same run always produces the same units in the
+            // same places regardless of frame pacing.
+            var random = Random.CreateFromIndex(config.Seed ^ (uint)(wave.Index * 7919 + wave.Released));
+
+            var kind = PickKind(wave.Remaining, ref random);
+
+            m_DormantQuery.SetSharedComponentFilter(new AgentKind { Value = kind });
             var dormant = m_DormantQuery.ToEntityArray(Allocator.Temp);
-            int take = math.min(budget, dormant.Length);
+            m_DormantQuery.ResetFilter();
 
-            if (take > 0)
+            if (dormant.Length == 0)
             {
-                // Seeded on the wave index and the running release count, so
-                // the same wave of the same run always produces the same
-                // positions regardless of frame pacing.
-                var random = Random.CreateFromIndex(
-                    config.Seed ^ (uint)(wave.Index * 7919 + wave.Released));
+                // Pool for this kind is exhausted. Drop the rest of that kind
+                // rather than stalling in Spawning waiting for corpses.
+                wave.Remaining[(int)kind] = 0;
+                dormant.Dispose();
+                return;
+            }
 
-                float speedScale = math.pow(1f + config.SpeedGrowth, math.max(0, wave.Index - 1));
-                var em = state.EntityManager;
+            int take = math.min(math.min(budget, wave.Remaining[(int)kind]), dormant.Length);
 
-                for (int i = 0; i < take; i++)
+            var stats = table.Get(kind);
+            float speedScale = math.pow(1f + config.SpeedGrowth, math.max(0, wave.Index - 1));
+            var em = state.EntityManager;
+
+            for (int i = 0; i < take; i++)
+            {
+                var entity = dormant[i];
+
+                float angle = random.NextFloat(0f, math.PI * 2f);
+                float radius = random.NextFloat(profile.InnerRadius, profile.OuterRadius);
+                float3 position = target.Position + new float3(
+                    math.cos(angle) * radius, 0f, math.sin(angle) * radius);
+                position.y = 0f;
+
+                bool tunnels = em.HasComponent<Underground>(entity);
+                if (tunnels)
+                    position.y = profile.BurrowDepth;
+
+                em.SetComponentData(entity, LocalTransform.FromPosition(position));
+                em.SetComponentData(entity, new HordeAgent
                 {
-                    var entity = dormant[i];
+                    Speed = random.NextFloat(stats.MinSpeed, stats.MaxSpeed) * speedScale
+                });
+                em.SetComponentData(entity, new Health
+                {
+                    Current = stats.Health,
+                    Max = stats.Health
+                });
 
-                    float angle = random.NextFloat(0f, math.PI * 2f);
-                    float radius = random.NextFloat(profile.InnerRadius, profile.OuterRadius);
-                    float3 position = target.Position + new float3(
-                        math.cos(angle) * radius, 0f, math.sin(angle) * radius);
-                    position.y = 0f;
-
-                    em.SetComponentData(entity, LocalTransform.FromPosition(position));
-                    em.SetComponentData(entity, new HordeAgent
-                    {
-                        Speed = random.NextFloat(profile.MinSpeed, profile.MaxSpeed) * speedScale
-                    });
-                    em.SetComponentData(entity, new Health
-                    {
-                        Current = profile.MaxHealth,
-                        Max = profile.MaxHealth
-                    });
-                    em.SetComponentEnabled<Active>(entity, true);
+                if (em.HasComponent<AgentCombat>(entity))
+                {
+                    var combat = em.GetComponentData<AgentCombat>(entity);
+                    combat.Cooldown = 0f;
+                    em.SetComponentData(entity, combat);
                 }
 
-                wave.Remaining -= take;
-                wave.Released += take;
-            }
-            else if (dormant.Length == 0)
-            {
-                // Pool exhausted. Drop the rest of the wave rather than
-                // stalling in Spawning forever waiting for corpses.
-                wave.Remaining = 0;
+                if (em.HasComponent<RangedAttacker>(entity))
+                {
+                    var ranged = em.GetComponentData<RangedAttacker>(entity);
+                    ranged.Target = Entity.Null;
+                    ranged.Cooldown = 0f;
+                    // Staggered so a whole wave of spitters does not rescan
+                    // the structure list on the same frame.
+                    ranged.RetargetTimer = random.NextFloat(0f, 0.4f);
+                    em.SetComponentData(entity, ranged);
+                    em.SetComponentEnabled<Holding>(entity, false);
+                }
+
+                if (tunnels)
+                    em.SetComponentEnabled<Underground>(entity, true);
+
+                em.SetComponentEnabled<Active>(entity, true);
             }
 
+            wave.Remaining[(int)kind] -= take;
+            wave.Released += take;
+
             dormant.Dispose();
+        }
+
+        /// <summary>Weighted pick over what is left in the wave.</summary>
+        static UnitKind PickKind(int4 remaining, ref Random random)
+        {
+            int total = remaining.x + remaining.y + remaining.z + remaining.w;
+            if (total <= 0)
+                return UnitKind.Runner;
+
+            int roll = random.NextInt(0, total);
+
+            if (roll < remaining.x) return UnitKind.Runner;
+            roll -= remaining.x;
+            if (roll < remaining.y) return UnitKind.Spitter;
+            roll -= remaining.y;
+            if (roll < remaining.z) return UnitKind.Burrower;
+            return UnitKind.Titan;
         }
     }
 }

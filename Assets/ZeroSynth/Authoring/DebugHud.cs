@@ -186,7 +186,7 @@ namespace ZeroSynth.Authoring
                     if (wave.Phase == WavePhase.Preparing)
                         m_Builder.Append(" ").Append(math.max(0f, wave.Timer).ToString("F1")).Append("s");
                     else if (wave.Phase == WavePhase.Spawning)
-                        m_Builder.Append("  ").Append(wave.Released).Append("+").Append(wave.Remaining);
+                        m_Builder.Append("  ").Append(wave.Released).Append("+").Append(wave.RemainingTotal);
                     m_Builder.Append('\n');
 
                     m_Builder.Append("biomass ").Append(economy.Biomass.ToString("F0"))
