@@ -176,6 +176,7 @@ namespace ZeroSynth.Flow
 
             var previous = State;
             State = next;
+            PossessionController.InputEnabled = next == GameState.Playing;
             StateChanged?.Invoke(previous, next);
         }
 

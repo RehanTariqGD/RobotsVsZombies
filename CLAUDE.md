@@ -94,7 +94,7 @@ Everything lives under `Assets/ZeroSynth/`: `Art/{Models,Textures,Materials}`,
 
 Independent work goes to Codex while Claude works on something else: issue the
 `ask_codex` call in the same message as Claude's own tool calls. Code Codex
-writes goes in a git worktree (`../RobotVsZombies_codex`) and is merged by
+writes goes in a git worktree (`D:/cw/RobotVsZombies_codex`, the only folder the Codex bridge may write to) and is merged by
 Claude after review. Claude defines the API contract first so Codex's code
 compiles against real types. Art (images) is saved to a scratch folder and
 imported by Claude.

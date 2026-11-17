@@ -138,3 +138,7 @@ keystore.properties
 /Tools/Blender/out/
 *.blend1
 __pycache__/
+
+# Written by the performance-testing package on every build.
+/Assets/Resources/PerformanceTestRun*
+/Assets/Resources.meta

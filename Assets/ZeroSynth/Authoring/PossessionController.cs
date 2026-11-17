@@ -39,6 +39,15 @@ namespace ZeroSynth.Authoring
         bool m_WasPressed;
         Vector2 m_PressOrigin;
 
+        /// <summary>
+        /// Set false while a menu or overlay is up. This controller polls the
+        /// pointer directly, so without the gate a tap on a menu button would
+        /// also read as a tap on the ground behind it and could grab a turret.
+        /// GameFlow owns this; it lives here because the Game assembly depends
+        /// on Authoring, not the other way round.
+        /// </summary>
+        public static bool InputEnabled = true;
+
         public Entity Possessed { get; private set; }
         public PossessionMode Mode { get; private set; }
 
@@ -94,7 +103,7 @@ namespace ZeroSynth.Authoring
 
         void Update()
         {
-            if (!m_Ready) return;
+            if (!m_Ready || !InputEnabled) return;
 
             var pointer = Pointer.current;
             if (pointer == null) return;

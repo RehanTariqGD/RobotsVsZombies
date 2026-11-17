@@ -6,7 +6,8 @@
         <ui:VisualElement name="safe-area" class="safe-area">
             <ui:VisualElement class="game-content">
                 <ui:VisualElement class="menu-column">
-                    <ui:Label text="ZERO-SYNTH" class="title" />
+                    <ui:VisualElement name="logo" class="logo" picking-mode="Ignore" />
+                    <ui:Label text="ZERO-SYNTH" name="title-fallback" class="title" />
                     <ui:Label text="NEXUS NETWORK // PURGE PROTOCOL" class="subtitle" />
                     <ui:Button name="play-button" text="PLAY" class="button button--primary" />
                     <ui:Button name="settings-button" text="SETTINGS" class="button" />

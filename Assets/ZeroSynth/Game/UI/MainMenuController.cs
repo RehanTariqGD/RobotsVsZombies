@@ -10,6 +10,9 @@ namespace ZeroSynth.UI
     {
         [SerializeField] Texture2D m_Backdrop;
 
+        [Tooltip("Wordmark shown above the buttons. Without one the text title is used.")]
+        [SerializeField] Texture2D m_Logo;
+
         Button m_Play;
         Button m_SettingsButton;
         Button m_Quit;
@@ -26,6 +29,14 @@ namespace ZeroSynth.UI
             root.Q<Label>("version-label").text = $"BUILD {Application.version}";
             if (m_Backdrop != null)
                 root.Q("backdrop").style.backgroundImage = new StyleBackground(m_Backdrop);
+            if (m_Logo != null)
+            {
+                var logo = root.Q("logo");
+                logo.style.backgroundImage = new StyleBackground(m_Logo);
+                logo.AddToClassList("logo--ready");
+                root.Q("title-fallback").style.display = DisplayStyle.None;
+            }
+
             m_Settings = new SettingsPanelController(root.Q("settings-panel"));
             m_Settings.Hide();
             m_Settings.Closed += OnSettingsClosed;

@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="UI_Theme.uss" />
+    <ui:VisualElement class="screen screen--menu" style="align-items: center; justify-content: center;">
+        <ui:Label text="LOADING" class="title" />
+        <ui:Label text="NEXUS NETWORK // SYNCHRONISING" class="subtitle" />
+    </ui:VisualElement>
+</ui:UXML>

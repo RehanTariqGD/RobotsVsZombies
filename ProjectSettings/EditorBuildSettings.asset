@@ -6,7 +6,16 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/HordeSandbox.unity
+    path: Assets/ZeroSynth/Scenes/SC_Boot.unity
+    guid: 5e191e0e1eb42fe49b090a2f3afa2369
+  - enabled: 1
+    path: Assets/ZeroSynth/Scenes/SC_Loading.unity
+    guid: e4d27761efaacf441af5e99dec32be07
+  - enabled: 1
+    path: Assets/ZeroSynth/Scenes/SC_MainMenu.unity
+    guid: 3331fe9db9d5e81428ee535ff65cf2f5
+  - enabled: 1
+    path: Assets/ZeroSynth/Scenes/SC_Game.unity
     guid: 1837969076f06084d9f4c239acca223f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

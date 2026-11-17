@@ -61,6 +61,8 @@
 .hud-pill { background-color: var(--panel-raised); border-width: 1px; border-color: var(--border); border-radius: 3px; padding: 10px 14px; margin-left: 8px; -unity-font-style: bold; }
 .menu-column { width: 33.33%; min-width: 320px; max-width: 520px; flex-grow: 1; justify-content: center; padding: 24px; background-color: rgba(14, 18, 22, 0.92); }
 .menu-column .title { font-size: 36px; }
+.logo { height: 96px; margin-bottom: 8px; -unity-background-scale-mode: scale-to-fit; display: none; }
+.logo--ready { display: flex; }
 .version { margin-top: 20px; }
 .overlay, .settings-overlay { position: absolute; left: 0; right: 0; top: 0; bottom: 0; align-items: center; justify-content: center; background-color: rgba(14, 18, 22, 0.94); }
 .settings-overlay { display: none; }
