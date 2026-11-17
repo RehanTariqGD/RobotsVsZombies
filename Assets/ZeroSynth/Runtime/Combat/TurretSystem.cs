@@ -169,8 +169,12 @@ namespace ZeroSynth
         }
     }
 
+    // EnabledRefRO<Possessed> goes into the generated query as a plain All, which
+    // for an enableable component means "enabled". Every unpossessed turret has
+    // it disabled, so without WithPresent no turret would ever fire.
     [BurstCompile]
     [WithAll(typeof(Powered))]
+    [WithPresent(typeof(Possessed))]
     public partial struct FireJob : IJobEntity
     {
         public float DeltaTime;
@@ -188,13 +192,16 @@ namespace ZeroSynth
             float rate = turret.FireRate * (possessed.ValueRO ? PossessionTuning.FireRateBonus : 1f);
             if (rate <= 0f) return;
 
-            turret.Cooldown -= DeltaTime;
+            // Floored at zero. Letting it run negative while idle banks time:
+            // when a target finally appeared, a turret that had waited ten
+            // seconds would fire every frame until the debt was paid off.
+            turret.Cooldown = math.max(0f, turret.Cooldown - DeltaTime);
             if (turret.Cooldown > 0f) return;
 
             if (target.Value == Entity.Null || !Transforms.HasComponent(target.Value))
                 return;
 
-            turret.Cooldown += 1f / rate;
+            turret.Cooldown = 1f / rate;
 
             Writer.Enqueue(new DamageEvent { Target = target.Value, Amount = turret.Damage });
 

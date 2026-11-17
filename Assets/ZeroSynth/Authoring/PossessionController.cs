@@ -89,6 +89,11 @@ namespace ZeroSynth.Authoring
                     ComponentType.ReadOnly<Turret>(),
                     ComponentType.ReadOnly<LocalTransform>()
                 },
+
+                // A destroyed turret is hidden but its entity stays, so without
+                // this a tap on the empty spot would possess an invisible,
+                // permanently unpowered weapon.
+                None = new[] { ComponentType.ReadOnly<Unity.Rendering.DisableRendering>() },
                 Options = EntityQueryOptions.IgnoreComponentEnabledState
             });
 

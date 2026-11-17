@@ -73,7 +73,9 @@ namespace ZeroSynth
 
         public void Execute(ref AgentCombat combat, in LocalTransform transform)
         {
-            combat.Cooldown -= DeltaTime;
+            // Floored at zero so time spent walking is not banked as attacks.
+            combat.Cooldown = math.max(0f, combat.Cooldown - DeltaTime);
+            if (combat.Cooldown > 0f || combat.AttackRate <= 0f) return;
 
             int2 cell = Config.WorldToCell(transform.Position);
             if (!Config.InBounds(cell)) return;
@@ -81,21 +83,43 @@ namespace ZeroSynth
             float2 heading = Direction[Config.Index(cell)];
             if (math.lengthsq(heading) < 1e-6f) return;
 
-            // Probe the cell the agent is heading into, at its reach.
-            float3 probe = transform.Position + new float3(heading.x, 0f, heading.y) * combat.Reach;
-            int2 target = Config.WorldToCell(probe);
-            if (!Config.InBounds(target)) return;
-
-            int index = Config.Index(target);
-            if ((Flags[index] & CellFlags.Wall) == 0) return;
-
-            var wall = Occupant[index];
+            var wall = FindWall(transform.Position, heading, combat.Reach);
             if (wall == Entity.Null) return;
 
-            if (combat.Cooldown > 0f || combat.AttackRate <= 0f) return;
-
-            combat.Cooldown += 1f / combat.AttackRate;
+            combat.Cooldown = 1f / combat.AttackRate;
             Writer.Enqueue(new DamageEvent { Target = wall, Amount = combat.Damage });
+        }
+
+        /// <summary>
+        /// First wall along the heading within reach.
+        /// </summary>
+        /// <remarks>
+        /// Marches in half-cell steps rather than probing the single point at full
+        /// reach. An agent held against a one-cell wall stops a hair short of its
+        /// face, so a point 1.2 m ahead lands on the far side of it, finds
+        /// nothing, and the agent would stand there never attacking. Longer
+        /// reach, such as the Titan's, made it worse.
+        /// </remarks>
+        Entity FindWall(float3 from, float2 heading, float reach)
+        {
+            float step = Config.CellSize * 0.5f;
+            int steps = (int)math.ceil(reach / step);
+            float3 direction = new float3(heading.x, 0f, heading.y);
+
+            for (int i = 0; i <= steps; i++)
+            {
+                float3 probe = from + direction * math.min(i * step, reach);
+                int2 cell = Config.WorldToCell(probe);
+                if (!Config.InBounds(cell)) return Entity.Null;
+
+                int index = Config.Index(cell);
+                var flags = Flags[index];
+
+                if ((flags & CellFlags.Impassable) != 0) return Entity.Null;
+                if ((flags & CellFlags.Wall) != 0) return Occupant[index];
+            }
+
+            return Entity.Null;
         }
     }
 }

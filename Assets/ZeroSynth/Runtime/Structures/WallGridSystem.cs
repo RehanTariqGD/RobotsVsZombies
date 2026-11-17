@@ -156,6 +156,12 @@ namespace ZeroSynth
                 hash = (hash ^ (uint)structures[i].Footprint.x) * 16777619u;
                 hash = (hash ^ (uint)structures[i].Footprint.y) * 16777619u;
                 hash = (hash ^ (uint)Band(healths[i])) * 16777619u;
+
+                // Alive or dead is its own input. A wall at 5% and a wall at 0%
+                // both land in band zero, so without this the moment a wall
+                // died would not change the signature, nothing would clear its
+                // cells, and the wreck would keep blocking pathing and building.
+                hash = (hash ^ (healths[i].Current > 0f ? 1u : 0u)) * 16777619u;
             }
             return hash ^ (uint)anchors.Length;
         }

@@ -176,6 +176,16 @@ namespace ZeroSynth
                     if (!Config.InBounds(nx, ny)) continue;
 
                     int n = Config.Index(nx, ny);
+
+                    // The same no-corner-cutting rule the integration sweep
+                    // used. Without it a diagonal across a sealed corner could
+                    // win here purely because its integration value is lower
+                    // by another route, pointing agents through the corner.
+                    if (ox != 0 && oy != 0
+                        && ((Flags[Config.Index(x + ox, y)] & CellFlags.Impassable) != 0
+                            || (Flags[Config.Index(x, y + oy)] & CellFlags.Impassable) != 0))
+                        continue;
+
                     if (Integration[n] < best)
                     {
                         best = Integration[n];

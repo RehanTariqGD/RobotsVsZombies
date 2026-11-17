@@ -73,9 +73,13 @@ namespace ZeroSynth
         }
     }
 
+    // Same trap as FireJob: EnabledRefRW<Holding> only matches agents whose
+    // Holding is already enabled, and it starts disabled. WithPresent matches
+    // them either way, so the job can be the thing that enables it.
     [BurstCompile]
     [WithAll(typeof(Active))]
     [WithNone(typeof(Underground))]
+    [WithPresent(typeof(Holding))]
     public partial struct SpitterJob : IJobEntity
     {
         public float DeltaTime;
@@ -127,11 +131,11 @@ namespace ZeroSynth
 
             holding.ValueRW = true;
 
-            ranged.Cooldown -= DeltaTime;
+            ranged.Cooldown = math.max(0f, ranged.Cooldown - DeltaTime);
             if (ranged.Cooldown > 0f || ranged.AttackRate <= 0f)
                 return;
 
-            ranged.Cooldown += 1f / ranged.AttackRate;
+            ranged.Cooldown = 1f / ranged.AttackRate;
             Writer.Enqueue(new DamageEvent { Target = ranged.Target, Amount = ranged.Damage });
         }
 

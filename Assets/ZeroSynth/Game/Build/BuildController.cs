@@ -56,6 +56,7 @@ namespace ZeroSynth.Build
 
         EntityManager m_EntityManager;
         EntityQuery m_EconomyQuery;
+        EntityQuery m_StructureQuery;
         GridAuthoring m_Grid;
         LineRenderer m_Outline;
         BuildDefinition m_Active;
@@ -235,7 +236,48 @@ namespace ZeroSynth.Build
                 }
             }
 
+            if (OverlapsLiveStructure(anchor, footprint))
+            {
+                reason = "SPACE BLOCKED";
+                return false;
+            }
+
             return true;
+        }
+
+        /// <summary>
+        /// Checks against the structures themselves, not the grid's flags.
+        /// </summary>
+        /// <remarks>
+        /// The flags are written by a system that sits inside the simulation
+        /// group, and the tactical pause freezes that group. Building while
+        /// paused therefore left the grid looking empty: the same cells passed
+        /// validation again, scrap was charged again, and structures stacked.
+        /// Dead structures are ignored so a wreck can be rebuilt over.
+        /// </remarks>
+        bool OverlapsLiveStructure(int2 anchor, int2 footprint)
+        {
+            var anchors = m_StructureQuery.ToComponentDataArray<GridAnchor>(Unity.Collections.Allocator.Temp);
+            var sizes = m_StructureQuery.ToComponentDataArray<Structure>(Unity.Collections.Allocator.Temp);
+            var healths = m_StructureQuery.ToComponentDataArray<Health>(Unity.Collections.Allocator.Temp);
+
+            bool overlaps = false;
+            for (int i = 0; i < anchors.Length && !overlaps; i++)
+            {
+                if (healths[i].Current <= 0f) continue;
+
+                int2 otherMin = anchors[i].Cell;
+                int2 otherMax = otherMin + math.max(sizes[i].Footprint, new int2(1, 1));
+                int2 mineMax = anchor + footprint;
+
+                overlaps = anchor.x < otherMax.x && mineMax.x > otherMin.x
+                        && anchor.y < otherMax.y && mineMax.y > otherMin.y;
+            }
+
+            anchors.Dispose();
+            sizes.Dispose();
+            healths.Dispose();
+            return overlaps;
         }
 
         void DrawOutline(GridConfig config, int2 anchor, int2 footprint, bool valid)
@@ -328,6 +370,10 @@ namespace ZeroSynth.Build
             {
                 m_EntityManager = world.EntityManager;
                 m_EconomyQuery = m_EntityManager.CreateEntityQuery(ComponentType.ReadOnly<Economy>());
+                m_StructureQuery = m_EntityManager.CreateEntityQuery(
+                    ComponentType.ReadOnly<GridAnchor>(),
+                    ComponentType.ReadOnly<Structure>(),
+                    ComponentType.ReadOnly<Health>());
                 m_Bound = true;
             }
 

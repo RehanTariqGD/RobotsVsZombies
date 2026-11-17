@@ -110,8 +110,12 @@ namespace ZeroSynth
             // the world. The field routes the swarm at the weakest segment;
             // this is what makes them pile up against it instead of walking
             // through, and AgentAttackSystem then chews it down.
+            // Terrain is solid too. The unreachable-pocket fallback above aims
+            // straight at the objective, and without this check it would walk
+            // through the very boundary that made the pocket unreachable.
             int2 nextCell = Config.WorldToCell(next);
-            if (Config.InBounds(nextCell) && (Flags[Config.Index(nextCell)] & CellFlags.Wall) != 0)
+            if (Config.InBounds(nextCell)
+                && (Flags[Config.Index(nextCell)] & (CellFlags.Wall | CellFlags.Impassable)) != 0)
                 return;
 
             transform.Position = next;

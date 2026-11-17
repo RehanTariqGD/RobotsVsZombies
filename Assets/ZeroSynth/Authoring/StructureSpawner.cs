@@ -49,7 +49,18 @@ namespace ZeroSynth.Authoring
             }
 
             if (def.Mesh != null && def.Material != null)
-                AddRendering(em, entity, def, config, footprint);
+            {
+                float4x4 post = AddRendering(em, entity, def, config, footprint);
+
+                // Written here, not left to the transform system. That system
+                // lives in the simulation group, which the tactical pause
+                // freezes, so a structure built while paused would sit at a zero
+                // matrix, invisible, until the player resumed.
+                em.SetComponentData(entity, new LocalToWorld
+                {
+                    Value = math.mul(float4x4.TRS(centre, quaternion.identity, new float3(1f)), post)
+                });
+            }
 
             return entity;
         }
@@ -92,7 +103,8 @@ namespace ZeroSynth.Authoring
             em.SetComponentEnabled<Powered>(entity, false);
         }
 
-        static void AddRendering(EntityManager em, Entity entity, BuildDefinition def, GridConfig config, int2 footprint)
+        /// <summary>Returns the post-transform matrix applied, or identity if none.</summary>
+        static float4x4 AddRendering(EntityManager em, Entity entity, BuildDefinition def, GridConfig config, int2 footprint)
         {
             var description = new RenderMeshDescription(
                 shadowCastingMode: ShadowCastingMode.Off,
@@ -116,8 +128,12 @@ namespace ZeroSynth.Authoring
 
             // PostTransformMatrix stretches the mesh without touching
             // LocalTransform.Scale, which must stay uniform.
-            if (!scale.Equals(new float3(1f, 1f, 1f)))
-                em.AddComponentData(entity, new PostTransformMatrix { Value = float4x4.Scale(scale) });
+            if (scale.Equals(new float3(1f, 1f, 1f)))
+                return float4x4.identity;
+
+            var post = float4x4.Scale(scale);
+            em.AddComponentData(entity, new PostTransformMatrix { Value = post });
+            return post;
         }
     }
 }

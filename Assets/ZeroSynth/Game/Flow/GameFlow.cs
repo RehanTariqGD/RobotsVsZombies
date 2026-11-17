@@ -148,10 +148,19 @@ namespace ZeroSynth.Flow
         /// </summary>
         public void SetTacticalPause(bool paused)
         {
-            if (State != GameState.Playing || m_TacticalPause == paused) return;
+            if ((State != GameState.Playing && State != GameState.Paused) || m_TacticalPause == paused)
+                return;
 
             m_TacticalPause = paused;
-            m_Reader.SetSimulationPaused(paused);
+
+            // From the pause menu the simulation stays frozen whatever this says;
+            // Resume applies the flag. It has to be accepted here though: opening
+            // the menu mid-build cancels the build, which releases the tactical
+            // pause, and refusing that left the flag stuck on and the game
+            // frozen after the menu closed.
+            if (State == GameState.Playing)
+                m_Reader.SetSimulationPaused(paused);
+
             TacticalPauseChanged?.Invoke();
         }
 
