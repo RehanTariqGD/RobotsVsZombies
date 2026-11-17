@@ -101,6 +101,33 @@ def paint(bm, faces, swatch):
             loop[uv_layer].uv = (u, v)
 
 
+def paint_mix(bm, faces, choices, seed):
+    """Paint each face with a swatch picked by weight: [(swatch, weight), ...].
+
+    Gives the patchy look from concept art (a green sac with pus patches)
+    while still using only palette swatches, so nothing needs a new texture.
+    """
+    rng = random.Random(seed)
+    swatches = [c[0] for c in choices]
+    weights = [c[1] for c in choices]
+    uv_layer = bm.loops.layers.uv.verify()
+    for f in faces:
+        u, v = swatch_uv(rng.choices(swatches, weights)[0])
+        for loop in f.loops:
+            loop[uv_layer].uv = (u, v)
+
+
+def blob(bm, centre, radii, choices, seed, subdiv=1):
+    """Faceted ellipsoid (icosphere). subdiv 1 = 80 tris. Returns its faces."""
+    res = bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=1.0)
+    c = mathutils.Vector(centre)
+    for v in res["verts"]:
+        v.co = mathutils.Vector((v.co.x * radii[0], v.co.y * radii[1], v.co.z * radii[2])) + c
+    faces = list({f for v in res["verts"] for f in v.link_faces})
+    paint_mix(bm, faces, choices, seed)
+    return faces
+
+
 def jitter(bm, amount, seed):
     """Deterministic vertex noise so shapes read as irregular, not machined."""
     rng = random.Random(seed)

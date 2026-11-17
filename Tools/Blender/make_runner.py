@@ -14,21 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import bpy
 import bmesh
 import zs_common as zs
-
-# Swarm palette swatch indices. Organic, matches the GDD: dull browns, sickly
-# greens, bright crimson accents. Same 8-swatch strip as the Synthetic one.
-GREEN, BROWN, DARK, BONE, CRIMSON, DEEP_RED, PUS, BLACK = range(8)
-
-SWARM_PALETTE = [
-    (0.36, 0.45, 0.22),  # GREEN    sickly skin
-    (0.33, 0.25, 0.18),  # BROWN    dull flesh
-    (0.18, 0.13, 0.10),  # DARK     shadowed limb
-    (0.72, 0.68, 0.55),  # BONE     spikes, claws
-    (0.80, 0.08, 0.12),  # CRIMSON  bright blood accent
-    (0.40, 0.05, 0.08),  # DEEP_RED wound
-    (0.68, 0.62, 0.20),  # PUS      eyes
-    (0.05, 0.04, 0.04),  # BLACK
-]
+from zs_swarm import (GREEN, BROWN, DARK, BONE, CRIMSON, DEEP_RED, PUS, BLACK,
+                      export_unit)
 
 
 def build_runner():
@@ -85,20 +72,4 @@ def build_runner():
     return obj
 
 
-def main():
-    out = zs.out_dir()
-    os.makedirs(out, exist_ok=True)
-
-    obj = build_runner()
-    tris = zs.triangle_count(obj)
-
-    dims = obj.dimensions
-    print(f"[ZS] Runner LOD0: {tris} tris, {len(obj.data.vertices)} verts, "
-          f"{dims.x:.2f} x {dims.y:.2f} x {dims.z:.2f} m")
-
-    zs.export_fbx(obj, os.path.join(out, "ZS_Runner_LOD0.fbx"))
-    zs.write_palette(os.path.join(out, "ZS_Palette_Swarm_BaseColor.png"), SWARM_PALETTE)
-    print(f"[ZS] wrote {out}")
-
-
-main()
+export_unit(build_runner(), "ZS_Runner_LOD0", budget=400)

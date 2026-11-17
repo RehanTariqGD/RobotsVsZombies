@@ -63,10 +63,13 @@ cam = bpy.data.objects.new("cam", cam_data)
 scene.collection.objects.link(cam)
 scene.camera = cam
 
+# Models face +Y, so the camera must sit on the +Y side (azimuth 180) to see
+# the front. Azimuth 0 is the back.
 views = {  # name: (azimuth degrees, elevation degrees)
-    "front": (0, 8),
+    "front": (180, 8),
     "side": (90, 8),
-    "three_quarter": (40, 22),
+    "three_quarter": (140, 22),
+    "back": (0, 8),
 }
 for name, (az, el) in views.items():
     a, e = math.radians(az), math.radians(el)
