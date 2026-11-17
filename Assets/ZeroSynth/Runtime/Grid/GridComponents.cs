@@ -15,6 +15,13 @@ namespace ZeroSynth
 
         /// <summary>Player structure. Traversable at a cost scaled to remaining health.</summary>
         Wall = 1 << 1,
+
+        /// <summary>
+        /// Not buildable, but does not affect pathing. Marks ground the player
+        /// may not build on, such as the core's footprint: agents reach the
+        /// core through the flow field and bite it, they do not path around it.
+        /// </summary>
+        Reserved = 1 << 2,
     }
 
     /// <summary>
@@ -46,6 +53,23 @@ namespace ZeroSynth
         {
             float2 p = Origin + ((float2)cell + 0.5f) * CellSize;
             return new float3(p.x, 0f, p.y);
+        }
+
+        /// <summary>
+        /// The anchor (minimum) cell of a footprint whose centre is nearest
+        /// <paramref name="centre"/>. Lets a pointer position pick the footprint
+        /// it is hovering over, for any size.
+        /// </summary>
+        public int2 AnchorForCentre(float3 centre, int2 footprint)
+        {
+            float2 offset = ((float2)footprint - 1f) * 0.5f * CellSize;
+            return (int2)math.round((centre.xz - offset - Origin) / CellSize - 0.5f);
+        }
+
+        /// <summary>World position of the centre of a footprint, on the ground plane.</summary>
+        public float3 FootprintCentre(int2 anchor, int2 footprint)
+        {
+            return CellToWorld(anchor) + new float3((footprint.x - 1) * 0.5f, 0f, (footprint.y - 1) * 0.5f) * CellSize;
         }
     }
 

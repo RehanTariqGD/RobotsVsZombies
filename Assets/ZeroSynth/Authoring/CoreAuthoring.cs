@@ -44,6 +44,8 @@ namespace ZeroSynth.Authoring
             em.AddComponent<Core>(m_Entity);
             em.AddComponentData(m_Entity, new Health { Current = m_Health, Max = m_Health });
 
+            ReserveFootprint(new int2(3, 3));
+
             if (m_Mesh == null || m_Material == null)
                 return;
 
@@ -59,6 +61,29 @@ namespace ZeroSynth.Authoring
                 description,
                 array,
                 MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0, 0));
+        }
+
+        /// <summary>
+        /// Marks the core's cells as not buildable. They are Reserved rather than
+        /// Wall, so pathing is unaffected: agents reach the core through the
+        /// flow field and bite it, they do not path around it.
+        /// </summary>
+        void ReserveFootprint(int2 footprint)
+        {
+            var grid = FindFirstObjectByType<GridAuthoring>();
+            if (grid == null || grid.Grid == null) return;
+
+            var config = grid.Config;
+            int2 anchor = config.AnchorForCentre(transform.position, footprint);
+
+            for (int y = 0; y < footprint.y; y++)
+            for (int x = 0; x < footprint.x; x++)
+            {
+                int cx = anchor.x + x;
+                int cy = anchor.y + y;
+                if (config.InBounds(cx, cy))
+                    grid.Grid.Flags[config.Index(cx, cy)] |= CellFlags.Reserved;
+            }
         }
 
         void OnDrawGizmos()

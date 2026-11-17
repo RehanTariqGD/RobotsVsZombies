@@ -48,6 +48,12 @@ namespace ZeroSynth.Authoring
         /// </summary>
         public static bool InputEnabled = true;
 
+        /// <summary>
+        /// The build menu has a structure selected, so a ground tap places it
+        /// rather than possessing a turret.
+        /// </summary>
+        public static bool BuildModeActive;
+
         public Entity Possessed { get; private set; }
         public PossessionMode Mode { get; private set; }
 
@@ -103,7 +109,7 @@ namespace ZeroSynth.Authoring
 
         void Update()
         {
-            if (!m_Ready || !InputEnabled) return;
+            if (!m_Ready || !InputEnabled || BuildModeActive) return;
 
             var pointer = Pointer.current;
             if (pointer == null) return;

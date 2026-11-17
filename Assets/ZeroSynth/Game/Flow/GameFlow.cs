@@ -35,6 +35,7 @@ namespace ZeroSynth.Flow
 
         readonly RunReader m_Reader = new RunReader();
         bool m_Transitioning;
+        bool m_TacticalPause;
 
         public GameState State { get; private set; } = GameState.Boot;
         public GameSnapshot Snapshot { get; private set; }
@@ -47,6 +48,15 @@ namespace ZeroSynth.Flow
 
         /// <summary>Raised after settings are applied and saved.</summary>
         public event Action SettingsChanged;
+
+        /// <summary>
+        /// The player froze the simulation to build or inspect. Distinct from
+        /// the pause menu: the game stays in Playing, no overlay opens, and
+        /// input keeps working. Reads false outside Playing.
+        /// </summary>
+        public bool TacticalPause => m_TacticalPause && State == GameState.Playing;
+
+        public event Action TacticalPauseChanged;
 
         void Awake()
         {
@@ -115,8 +125,24 @@ namespace ZeroSynth.Flow
         public void Resume()
         {
             if (State != GameState.Paused) return;
-            m_Reader.SetSimulationPaused(false);
+
+            // Back to whatever the player had before the menu: if they were in
+            // a tactical pause, the simulation stays frozen.
+            m_Reader.SetSimulationPaused(m_TacticalPause);
             SetState(GameState.Playing);
+        }
+
+        /// <summary>
+        /// Freeze or unfreeze the simulation without opening the pause menu.
+        /// Only meaningful while playing.
+        /// </summary>
+        public void SetTacticalPause(bool paused)
+        {
+            if (State != GameState.Playing || m_TacticalPause == paused) return;
+
+            m_TacticalPause = paused;
+            m_Reader.SetSimulationPaused(paused);
+            TacticalPauseChanged?.Invoke();
         }
 
         /// <summary>Abandon the current run and start a fresh one.</summary>
@@ -216,6 +242,7 @@ namespace ZeroSynth.Flow
         {
             m_Transitioning = true;
             Snapshot = default;
+            m_TacticalPause = false;
             SetState(GameState.Loading);
 
             float started = Time.unscaledTime;

@@ -5,7 +5,7 @@ using Unity.Mathematics;
 namespace ZeroSynth
 {
     /// <summary>
-    /// Keeps the grid's wall cost and occupancy in step with live wall health,
+    /// Keeps the grid's cost and occupancy in step with live structure health,
     /// and dirties the flow field only when it genuinely changes.
     /// </summary>
     /// <remarks>
@@ -42,7 +42,7 @@ namespace ZeroSynth
             m_GridQuery = state.GetEntityQuery(ComponentType.ReadOnly<GridData>());
 
             m_WallQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<Wall, GridAnchor, Structure, Health>()
+                .WithAll<GridAnchor, Structure, Health>()
                 .Build(ref state);
 
             m_Written = new NativeList<int>(256, Allocator.Persistent);

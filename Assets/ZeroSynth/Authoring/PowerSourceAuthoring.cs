@@ -52,6 +52,15 @@ namespace ZeroSynth.Authoring
                 Footprint = new int2(2, 2)
             });
 
+            var grid = FindFirstObjectByType<GridAuthoring>();
+            if (grid != null)
+            {
+                m_EntityManager.AddComponentData(m_Entity, new GridAnchor
+                {
+                    Cell = grid.Config.AnchorForCentre(transform.position, new int2(2, 2))
+                });
+            }
+
             m_EntityManager.AddComponentData(m_Entity, new PowerNode
             {
                 SupplyRange = m_SupplyRange,

@@ -76,6 +76,18 @@ namespace ZeroSynth.Authoring
                 Current = m_Health,
                 Max = m_Health
             });
+
+            // On the grid like any structure, so agents path against it and
+            // attack it, and so a build placement cannot overlap it.
+            var grid = FindFirstObjectByType<GridAuthoring>();
+            if (grid != null)
+            {
+                m_EntityManager.AddComponentData(m_Entity, new GridAnchor
+                {
+                    Cell = grid.Config.AnchorForCentre(transform.position, new Unity.Mathematics.int2(1, 1))
+                });
+            }
+
             m_EntityManager.AddComponentData(m_Entity, new TurretStance { Value = m_Stance });
             m_EntityManager.AddComponentData(m_Entity, new TurretTarget { Value = Entity.Null });
 
