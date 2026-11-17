@@ -79,3 +79,15 @@
 .resource-row { flex-direction: row; }
 .hud-heading { font-size: 24px; -unity-font-style: bold; }
 .core-label { -unity-text-align: middle-center; margin-bottom: 8px; }
+
+/* Build bar */
+.build-content { flex-grow: 1; padding: 16px; align-items: center; }
+.build-spacer { flex-grow: 1; }
+.build-dock { align-items: center; max-width: 100%; }
+.build-bar { flex-direction: row; align-items: center; padding: 6px; }
+.build-options { flex-direction: row; align-items: center; }
+.build-button { min-width: 64px; min-height: 64px; margin: 0 4px; padding: 12px; font-size: 18px; letter-spacing: 1px; }
+.button.build-option--selected { background-color: var(--accent); border-color: var(--accent); color: var(--background); }
+.button.build-option--locked { opacity: 0.5; }
+.build-toast { background-color: var(--panel); border-width: 1px; border-color: var(--border); border-radius: 3px; color: var(--text); padding: 10px 16px; margin-bottom: 12px; -unity-font-style: bold; -unity-text-align: middle-center; }
+.build-paused-pill { margin-left: 0; color: var(--accent); font-size: 16px; letter-spacing: 2px; }
