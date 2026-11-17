@@ -111,10 +111,29 @@ namespace ZeroSynth.Audio
                 m_NextAllowed[id] = now + minInterval;
             }
 
-            var source = m_Pool[m_Next];
-            m_Next = (m_Next + 1) % m_Pool.Length;
+            // Prefer a source that has finished. When all are busy, one is
+            // reused but its pitch is left alone, so a sound still playing on
+            // it is not bent mid-note.
+            AudioSource source = null;
+            for (int i = 0; i < m_Pool.Length; i++)
+            {
+                var candidate = m_Pool[(m_Next + i) % m_Pool.Length];
+                if (candidate.isPlaying) continue;
+                source = candidate;
+                m_Next = (m_Next + i + 1) % m_Pool.Length;
+                break;
+            }
 
-            source.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
+            if (source != null)
+            {
+                source.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
+            }
+            else
+            {
+                source = m_Pool[m_Next];
+                m_Next = (m_Next + 1) % m_Pool.Length;
+            }
+
             source.PlayOneShot(clip, Mathf.Clamp01(volume) * SfxVolume());
         }
 

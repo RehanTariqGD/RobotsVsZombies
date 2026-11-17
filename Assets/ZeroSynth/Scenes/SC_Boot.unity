@@ -240,7 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eb14e24294c6ba478ecf5938dc80304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ZeroSynth.Game::ZeroSynth.Flow.GameFlow
-  m_WavesToWin: 10
+  m_WavesToWin: 20
   m_MinLoadSeconds: 0.25
 --- !u!4 &772150675
 Transform:

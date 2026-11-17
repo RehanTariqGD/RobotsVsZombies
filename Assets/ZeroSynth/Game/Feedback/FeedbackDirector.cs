@@ -315,7 +315,8 @@ namespace ZeroSynth.Feedback
             var audio = AudioDirector.Instance;
             if (audio == null) return;
 
-            audio.Play(message.EndsWith("BUILT") ? Sfx.Build : Sfx.Error, 0.8f, 0.05f, 0.02f);
+            bool success = message.EndsWith("BUILT") || message == "REPAIRED" || message.StartsWith("SOLD");
+            audio.Play(success ? Sfx.Build : Sfx.Error, 0.8f, 0.05f, 0.02f);
         }
     }
 }

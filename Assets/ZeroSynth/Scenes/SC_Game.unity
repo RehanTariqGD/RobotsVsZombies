@@ -1857,7 +1857,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4eb14e24294c6ba478ecf5938dc80304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ZeroSynth.Game::ZeroSynth.Flow.GameFlow
-  m_WavesToWin: 10
+  m_WavesToWin: 20
   m_MinLoadSeconds: 0.25
 --- !u!1 &1917565877
 GameObject:
@@ -1971,16 +1971,16 @@ MonoBehaviour:
     RangedRate: 0.7
     RangedRange: 14
   m_RunSeed: 20261021
-  m_BaseWaveCount: 400
-  m_SpitterBase: 30
-  m_SpitterFirstWave: 2
-  m_BurrowerBase: 20
-  m_BurrowerFirstWave: 3
+  m_BaseWaveCount: 30
+  m_SpitterBase: 8
+  m_SpitterFirstWave: 3
+  m_BurrowerBase: 5
+  m_BurrowerFirstWave: 5
   m_TitanEvery: 5
-  m_CountGrowth: 0.3
-  m_PrepareDuration: 8
+  m_CountGrowth: 0.25
+  m_PrepareDuration: 12
   m_SpawnRate: 120
-  m_SpeedGrowth: 0.04
+  m_SpeedGrowth: 0.025
   m_ScrapPerWave: 150
   m_StartingScrap: 400
   m_SpawnInnerRadius: 45

@@ -72,21 +72,21 @@ namespace ZeroSynth.Authoring
 
         [Header("Waves")]
         [SerializeField] uint m_RunSeed = 20261021;
-        [SerializeField, Min(1)] int m_BaseWaveCount = 300;
-        [SerializeField, Min(0)] int m_SpitterBase = 30;
-        [SerializeField, Min(1)] int m_SpitterFirstWave = 2;
-        [SerializeField, Min(0)] int m_BurrowerBase = 20;
-        [SerializeField, Min(1)] int m_BurrowerFirstWave = 3;
+        [SerializeField, Min(1)] int m_BaseWaveCount = 30;
+        [SerializeField, Min(0)] int m_SpitterBase = 8;
+        [SerializeField, Min(1)] int m_SpitterFirstWave = 3;
+        [SerializeField, Min(0)] int m_BurrowerBase = 5;
+        [SerializeField, Min(1)] int m_BurrowerFirstWave = 5;
 
         [Tooltip("A Titan arrives every Nth wave. Zero disables bosses.")]
         [SerializeField, Min(0)] int m_TitanEvery = 5;
 
         [Tooltip("Fractional growth per wave. 0.25 = +25% each wave.")]
-        [SerializeField, Min(0f)] float m_CountGrowth = 0.3f;
+        [SerializeField, Min(0f)] float m_CountGrowth = 0.25f;
 
-        [SerializeField, Min(0f)] float m_PrepareDuration = 8f;
+        [SerializeField, Min(0f)] float m_PrepareDuration = 12f;
         [SerializeField, Min(1f)] float m_SpawnRate = 120f;
-        [SerializeField, Min(0f)] float m_SpeedGrowth = 0.04f;
+        [SerializeField, Min(0f)] float m_SpeedGrowth = 0.025f;
         [SerializeField, Min(0f)] float m_ScrapPerWave = 150f;
         [SerializeField, Min(0f)] float m_StartingScrap = 400f;
 

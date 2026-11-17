@@ -28,7 +28,7 @@ namespace ZeroSynth.Flow
 
         [Header("Run")]
         [Tooltip("Clearing this wave wins the run.")]
-        [SerializeField, Min(1)] int m_WavesToWin = 10;
+        [SerializeField, Min(1)] int m_WavesToWin = 20;
 
         [Tooltip("Shortest time spent on the loading scene, so it does not flash.")]
         [SerializeField, Min(0f)] float m_MinLoadSeconds = 0.25f;
@@ -177,6 +177,7 @@ namespace ZeroSynth.Flow
         {
             if (m_Transitioning) return;
             if (State != GameState.Paused && State != GameState.GameOver && State != GameState.Victory) return;
+            RecordAbandonedProgress();
             StartCoroutine(TransitionTo(SceneNames.Game, GameState.Playing));
         }
 
@@ -184,7 +185,20 @@ namespace ZeroSynth.Flow
         {
             if (m_Transitioning) return;
             if (State != GameState.Paused && State != GameState.GameOver && State != GameState.Victory) return;
+            RecordAbandonedProgress();
             StartCoroutine(TransitionTo(SceneNames.MainMenu, GameState.MainMenu));
+        }
+
+        /// <summary>
+        /// Leaving from the pause menu still counts the waves already cleared.
+        /// A finished run recorded itself in <see cref="EndRun"/>.
+        /// </summary>
+        void RecordAbandonedProgress()
+        {
+            if (State != GameState.Paused || !Snapshot.Valid) return;
+
+            int cleared = Snapshot.Phase == WavePhase.Preparing ? Snapshot.Wave : Snapshot.Wave - 1;
+            PlayerRecords.SubmitWave(Mathf.Max(0, cleared));
         }
 
         public void QuitApplication()

@@ -240,7 +240,11 @@ namespace ZeroSynth.Build
             if (!TryGetGroundPoint(screen, out float3 ground))
                 return;
 
-            bool released = pointer.press.wasReleasedThisFrame && !m_PressBlocked;
+            // Both ends of the gesture must be on the world: a drag that slides
+            // onto the build bar, or a tap that just chose the tool, must not
+            // act on whatever is underneath.
+            bool released = pointer.press.wasReleasedThisFrame && !m_PressBlocked
+                            && !IsOverBlockingUi(screen);
 
             if (Mode == BuildMode.Place)
                 UpdatePlace(ground, released);
@@ -312,7 +316,10 @@ namespace ZeroSynth.Build
                     return false;
                 }
 
-                if (flags[config.Index(cx, cy)] != CellFlags.None)
+                // Only terrain and reservations are read from the grid. Wall
+                // flags lag behind the structures while the sim is paused, and
+                // live structures are checked directly below.
+                if ((flags[config.Index(cx, cy)] & (CellFlags.Impassable | CellFlags.Reserved)) != CellFlags.None)
                 {
                     reason = "SPACE BLOCKED";
                     return false;
