@@ -137,3 +137,4 @@ keystore.properties
 # Blender script outputs. Exported FBX/textures are reviewed, then copied into Assets/.
 /Tools/Blender/out/
 *.blend1
+__pycache__/
