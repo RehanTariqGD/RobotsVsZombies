@@ -134,14 +134,17 @@ namespace ZeroSynth
     {
         EntityQuery m_BufferQuery;
         EntityQuery m_GridQuery;
+        EntityQuery m_FeedbackQuery;
 
         public void OnCreate(ref SystemState state)
         {
             m_BufferQuery = state.GetEntityQuery(ComponentType.ReadOnly<DamageBuffer>());
             m_GridQuery = state.GetEntityQuery(ComponentType.ReadOnly<SpatialGridData>());
+            m_FeedbackQuery = state.GetEntityQuery(ComponentType.ReadOnly<SimFeedback>());
             state.RequireForUpdate<Turret>();
             state.RequireForUpdate(m_BufferQuery);
             state.RequireForUpdate(m_GridQuery);
+            state.RequireForUpdate(m_FeedbackQuery);
         }
 
         public void OnUpdate(ref SystemState state)
@@ -150,6 +153,8 @@ namespace ZeroSynth
                 m_BufferQuery.GetSingletonEntity());
             var grid = state.EntityManager.GetComponentObject<SpatialGridData>(
                 m_GridQuery.GetSingletonEntity());
+            var feedback = state.EntityManager.GetComponentObject<SimFeedback>(
+                m_FeedbackQuery.GetSingletonEntity());
 
             state.Dependency = new FireJob
             {
@@ -159,7 +164,8 @@ namespace ZeroSynth
                 Entities = grid.Entities,
                 Positions = grid.Positions,
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
-                Writer = buffer.Pending.AsParallelWriter()
+                Writer = buffer.Pending.AsParallelWriter(),
+                Shots = feedback.Shots.AsParallelWriter()
             }.ScheduleParallel(state.Dependency);
 
             // Several systems write the damage queue from jobs, and the queue
@@ -186,6 +192,7 @@ namespace ZeroSynth
         [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
         public NativeQueue<DamageEvent>.ParallelWriter Writer;
+        public NativeQueue<ShotEvent>.ParallelWriter Shots;
 
         public void Execute(ref Turret turret, in TurretTarget target, in LocalTransform transform, EnabledRefRO<Possessed> possessed)
         {
@@ -204,6 +211,14 @@ namespace ZeroSynth
             turret.Cooldown = 1f / rate;
 
             Writer.Enqueue(new DamageEvent { Target = target.Value, Amount = turret.Damage });
+
+            // Presentation only: a tracer from muzzle height to chest height.
+            Shots.Enqueue(new ShotEvent
+            {
+                From = transform.Position + new float3(0f, 1f, 0f),
+                To = Transforms[target.Value].Position + new float3(0f, 0.9f, 0f),
+                Kind = ShotKind.Turret
+            });
 
             if (turret.SplashRadius <= 0f)
                 return;

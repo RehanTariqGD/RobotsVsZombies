@@ -28,6 +28,7 @@ namespace ZeroSynth
     {
         EntityQuery m_StructureQuery;
         EntityQuery m_BufferQuery;
+        EntityQuery m_FeedbackQuery;
 
         public void OnCreate(ref SystemState state)
         {
@@ -37,15 +38,19 @@ namespace ZeroSynth
                 .Build(ref state);
 
             m_BufferQuery = state.GetEntityQuery(ComponentType.ReadOnly<DamageBuffer>());
+            m_FeedbackQuery = state.GetEntityQuery(ComponentType.ReadOnly<SimFeedback>());
 
             state.RequireForUpdate<RangedAttacker>();
             state.RequireForUpdate(m_BufferQuery);
+            state.RequireForUpdate(m_FeedbackQuery);
         }
 
         public void OnUpdate(ref SystemState state)
         {
             var buffer = state.EntityManager.GetComponentObject<DamageBuffer>(
                 m_BufferQuery.GetSingletonEntity());
+            var feedback = state.EntityManager.GetComponentObject<SimFeedback>(
+                m_FeedbackQuery.GetSingletonEntity());
 
             var entities = m_StructureQuery.ToEntityArray(Allocator.TempJob);
             var transforms = m_StructureQuery.ToComponentDataArray<LocalTransform>(Allocator.TempJob);
@@ -61,7 +66,8 @@ namespace ZeroSynth
                 StructurePositions = positions,
                 Healths = SystemAPI.GetComponentLookup<Health>(true),
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
-                Writer = buffer.Pending.AsParallelWriter()
+                Writer = buffer.Pending.AsParallelWriter(),
+                Shots = feedback.Shots.AsParallelWriter()
             }.ScheduleParallel(state.Dependency);
 
             state.Dependency = JobHandle.CombineDependencies(
@@ -90,6 +96,7 @@ namespace ZeroSynth
         [ReadOnly] public ComponentLookup<LocalTransform> Transforms;
 
         public NativeQueue<DamageEvent>.ParallelWriter Writer;
+        public NativeQueue<ShotEvent>.ParallelWriter Shots;
 
         const float RetargetInterval = 0.4f;
 
@@ -137,6 +144,13 @@ namespace ZeroSynth
 
             ranged.Cooldown = 1f / ranged.AttackRate;
             Writer.Enqueue(new DamageEvent { Target = ranged.Target, Amount = ranged.Damage });
+
+            Shots.Enqueue(new ShotEvent
+            {
+                From = origin + new float3(0f, 1.7f, 0f),
+                To = Transforms[ranged.Target].Position + new float3(0f, 1f, 0f),
+                Kind = ShotKind.Acid
+            });
         }
 
         Entity FindNearestInRange(float3 origin, float rangeSq)

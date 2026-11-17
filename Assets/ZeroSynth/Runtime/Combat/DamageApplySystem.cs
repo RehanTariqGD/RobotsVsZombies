@@ -12,16 +12,21 @@ namespace ZeroSynth
     /// Centralising the write is what makes overkill correct: several sources
     /// hitting the same agent in one frame resolve in a defined order instead
     /// of racing, and an entity cannot be killed twice.
+    ///
+    /// It is also the one place that sees every hit land, so it is where the
+    /// presentation counters (hits, core damage, structures lost) are kept.
     /// </remarks>
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateAfter(typeof(AgentSteeringSystem))]
     public partial struct DamageApplySystem : ISystem
     {
         EntityQuery m_BufferQuery;
+        EntityQuery m_FeedbackQuery;
 
         public void OnCreate(ref SystemState state)
         {
             m_BufferQuery = state.GetEntityQuery(ComponentType.ReadOnly<DamageBuffer>());
+            m_FeedbackQuery = state.GetEntityQuery(ComponentType.ReadOnly<SimFeedback>());
             state.RequireForUpdate(m_BufferQuery);
         }
 
@@ -37,21 +42,28 @@ namespace ZeroSynth
             if (buffer.Pending.Count == 0)
                 return;
 
+            SimFeedback feedback = m_FeedbackQuery.IsEmpty
+                ? null
+                : state.EntityManager.GetComponentObject<SimFeedback>(m_FeedbackQuery.GetSingletonEntity());
+
             // Main thread on purpose: this is a serial reduction over a shared
             // resource, and parallelising it would need per-entity atomics for
             // no benefit at this scale.
             var healthLookup = SystemAPI.GetComponentLookup<Health>();
-            var activeLookup = SystemAPI.GetComponentLookup<Active>();
+            var activeLookup = SystemAPI.GetComponentLookup<Active>(true);
+            var coreLookup = SystemAPI.GetComponentLookup<Core>(true);
 
             while (buffer.Pending.TryDequeue(out var evt))
             {
                 if (!healthLookup.HasComponent(evt.Target))
                     continue;
 
+                bool isAgent = activeLookup.HasComponent(evt.Target);
+
                 // Already dead or already pooled: drop the hit rather than
                 // letting it drive health further negative and re-queue a
                 // second death for the same entity.
-                if (activeLookup.HasComponent(evt.Target) && !activeLookup.IsComponentEnabled(evt.Target))
+                if (isAgent && !activeLookup.IsComponentEnabled(evt.Target))
                     continue;
 
                 var health = healthLookup[evt.Target];
@@ -61,8 +73,20 @@ namespace ZeroSynth
                 health.Current -= evt.Amount;
                 healthLookup[evt.Target] = health;
 
+                if (feedback != null)
+                {
+                    feedback.Hits++;
+                    if (coreLookup.HasComponent(evt.Target))
+                        feedback.CoreDamage += evt.Amount;
+                }
+
                 if (health.Current <= 0f)
+                {
                     buffer.Deaths.Enqueue(evt.Target);
+
+                    if (feedback != null && !isAgent)
+                        feedback.StructuresLost++;
+                }
             }
         }
     }
@@ -75,10 +99,12 @@ namespace ZeroSynth
     public partial struct RecycleSystem : ISystem
     {
         EntityQuery m_BufferQuery;
+        EntityQuery m_FeedbackQuery;
 
         public void OnCreate(ref SystemState state)
         {
             m_BufferQuery = state.GetEntityQuery(ComponentType.ReadOnly<DamageBuffer>());
+            m_FeedbackQuery = state.GetEntityQuery(ComponentType.ReadOnly<SimFeedback>());
             state.RequireForUpdate(m_BufferQuery);
         }
 
@@ -89,13 +115,22 @@ namespace ZeroSynth
             var buffer = state.EntityManager.GetComponentObject<DamageBuffer>(
                 m_BufferQuery.GetSingletonEntity());
 
+            SimFeedback feedback = m_FeedbackQuery.IsEmpty
+                ? null
+                : state.EntityManager.GetComponentObject<SimFeedback>(m_FeedbackQuery.GetSingletonEntity());
+
+            // Queues nobody is draining must not grow forever.
+            if (feedback != null)
+                feedback.TrimIfUndrained();
+
             if (buffer.Deaths.Count == 0)
                 return;
 
             var transformLookup = SystemAPI.GetComponentLookup<LocalTransform>();
             var activeLookup = SystemAPI.GetComponentLookup<Active>();
-
             var bountyLookup = SystemAPI.GetComponentLookup<Bounty>(true);
+            var heightLookup = SystemAPI.GetComponentLookup<LodHeight>(true);
+
             float biomass = 0f;
 
             while (buffer.Deaths.TryDequeue(out var entity))
@@ -106,17 +141,29 @@ namespace ZeroSynth
                 if (bountyLookup.HasComponent(entity))
                     biomass += bountyLookup[entity].Biomass;
 
-                // Disabling Active drops it out of every gameplay query, and
-                // parking it below the map takes it out of the view frustum,
-                // so a pooled agent costs one cull test and nothing else.
-                activeLookup.SetComponentEnabled(entity, false);
-
                 if (transformLookup.HasComponent(entity))
                 {
                     var transform = transformLookup[entity];
+
+                    // Underground agents die out of sight; a burst there would
+                    // appear to come from nowhere.
+                    if (feedback != null && transform.Position.y > -0.5f)
+                    {
+                        feedback.Deaths.Enqueue(new DeathEvent
+                        {
+                            Position = transform.Position,
+                            Size = heightLookup.HasComponent(entity) ? heightLookup[entity].Meters : 1.8f
+                        });
+                    }
+
+                    // Disabling Active drops it out of every gameplay query, and
+                    // parking it below the map takes it out of the view frustum,
+                    // so a pooled agent costs one cull test and nothing else.
                     transform.Position = PoolConstants.ParkPosition;
                     transformLookup[entity] = transform;
                 }
+
+                activeLookup.SetComponentEnabled(entity, false);
             }
 
             // Accumulated across the whole drain, so the economy takes one

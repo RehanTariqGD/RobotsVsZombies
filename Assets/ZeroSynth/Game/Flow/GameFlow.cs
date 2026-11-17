@@ -69,6 +69,11 @@ namespace ZeroSynth.Flow
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // Audio lives on this object so it survives scene loads and the
+            // music does not restart between the menu and a run.
+            if (GetComponent<ZeroSynth.Audio.AudioDirector>() == null)
+                gameObject.AddComponent<ZeroSynth.Audio.AudioDirector>();
+
             Settings = GameSettings.Load();
             ApplySettings();
         }

@@ -110,6 +110,7 @@ namespace ZeroSynth.Authoring
         NativeList<Entity> m_Pool;
         Entity m_TargetEntity;
         DamageBuffer m_DamageBuffer;
+        SimFeedback m_Feedback;
         bool m_Initialised;
 
         public int PoolSize => m_Pool.IsCreated ? m_Pool.Length : 0;
@@ -226,6 +227,15 @@ namespace ZeroSynth.Authoring
             var entity = m_EntityManager.CreateEntity();
             m_EntityManager.SetName(entity, "DamageBuffer");
             m_EntityManager.AddComponentObject(entity, m_DamageBuffer);
+
+            // Events for presentation to react to. Its own entity, not the
+            // damage buffer's: the simulation must run unchanged with it absent.
+            m_Feedback = new SimFeedback();
+            m_Feedback.Allocate();
+
+            var feedbackEntity = m_EntityManager.CreateEntity();
+            m_EntityManager.SetName(feedbackEntity, "SimFeedback");
+            m_EntityManager.AddComponentObject(feedbackEntity, m_Feedback);
         }
 
         UnitStats StatsFor(UnitKind kind)
@@ -438,6 +448,8 @@ namespace ZeroSynth.Authoring
             if (m_Pool.IsCreated) m_Pool.Dispose();
             m_DamageBuffer?.Dispose();
             m_DamageBuffer = null;
+            m_Feedback?.Dispose();
+            m_Feedback = null;
         }
     }
 }
