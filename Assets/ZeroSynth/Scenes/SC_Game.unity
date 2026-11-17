@@ -1640,6 +1640,8 @@ MonoBehaviour:
     Damage: 0
     SplashRadius: 0
     SupplyRange: 0
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
   - Label: Turret
     Kind: 1
     Mesh: {fileID: 4945944309118658882, guid: ee242f49a3cb6934f82bafd67799e296, type: 3}
@@ -1654,6 +1656,8 @@ MonoBehaviour:
     Damage: 10
     SplashRadius: 0
     SupplyRange: 0
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
   - Label: Pylon
     Kind: 4
     Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
@@ -1668,10 +1672,30 @@ MonoBehaviour:
     Damage: 0
     SplashRadius: 0
     SupplyRange: 30
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
+  - Label: Foundry
+    Kind: 3
+    Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    Material: {fileID: 2100000, guid: ca42ea38441246b4b8ee2a13ce12c573, type: 2}
+    Footprint: {x: 3, y: 2}
+    VisualScale: {x: 1, y: 2.4, z: 1}
+    StretchToFootprint: 1
+    YOffset: 1.2
+    Health: 300
+    Range: 0
+    FireRate: 0
+    Damage: 0
+    SplashRadius: 0
+    SupplyRange: 30
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
   m_BlockingDocuments:
   - {fileID: 346351569}
   - {fileID: 2040428057}
   m_GroundHeight: 0
+  m_RepairCostPerHealth: 0.15
+  m_SellRefund: 0.5
 --- !u!1 &1693995012
 GameObject:
   m_ObjectHideFlags: 0
