@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="UI_Theme.uss" />
+    <ui:VisualElement class="panel settings-card">
+        <ui:Label text="SYSTEM SETTINGS" class="title" />
+        <ui:ScrollView class="settings-scroll" mode="Vertical" horizontal-scroller-visibility="Hidden">
+            <ui:Slider name="master-slider" label="MASTER" low-value="0" high-value="1" class="slider-row" />
+            <ui:Slider name="music-slider" label="MUSIC" low-value="0" high-value="1" class="slider-row" />
+            <ui:Slider name="sfx-slider" label="SFX" low-value="0" high-value="1" class="slider-row" />
+            <ui:DropdownField name="quality-dropdown" label="QUALITY" class="slider-row" />
+            <ui:Toggle name="debug-hud-toggle" label="DEBUG HUD" class="toggle-row" />
+        </ui:ScrollView>
+        <ui:Button name="settings-back-button" text="BACK" class="button button--primary" />
+    </ui:VisualElement>
+</ui:UXML>

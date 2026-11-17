@@ -1,0 +1,20 @@
+# ZERO-SYNTH runtime UI
+- SC_MainMenu: UIDocument source UI_MainMenu.uxml; add MainMenuController.
+- SC_Game: UIDocument source UI_Game.uxml; add GameUiController.
+- Both documents need a PanelSettings with the runtime theme assigned and UI_Theme.uss added as a stylesheet (already referenced by UXML).
+- Use Scale With Screen Size, a landscape reference resolution (1280 x 720), and landscape-only rotation.
+- Start via SC_Boot so GameFlow exists; UI never loads scenes directly.
+- Assign MainMenuController's Backdrop texture, or set the backdrop background image during scene setup.
+- MainMenuController expects: play-button, settings-button, quit-button, version-label, backdrop, settings-panel, safe-area.
+- SettingsPanelController expects inside settings-panel: master-slider, music-slider, sfx-slider, quality-dropdown, debug-hud-toggle, settings-back-button.
+- GameUiController expects: hud, pause-screen, outcome-screen, settings-panel, safe-area.
+- HUD elements: wave-label, phase-label, remaining-label, core-bar-fill, core-label, biomass-label, scrap-label, pause-button.
+- core-bar is the track containing core-bar-fill; leave its width controlled by layout.
+- Pause buttons: resume-button, restart-button, pause-settings-button, menu-button.
+- Outcome labels: outcome-title, outcome-wave, outcome-biomass, outcome-scrap.
+- Outcome buttons: outcome-restart-button, outcome-menu-button.
+- Keep safe-area full-screen; SafeAreaPadding handles panel-scaled notch insets and landscape flips.
+- UI_Settings.uxml is instantiated once in each document; keep its instance named settings-panel.
+- Settings save immediately; BACK closes only the settings panel, leaving the run paused.
+- HUD resource totals display whole units; core health rounds up. Unchanged displayed values allocate no strings.
+- Device verification: safe areas on both landscape orientations, touch controls, pause/settings/resume, outcomes, and scene transitions.

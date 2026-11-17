@@ -1,0 +1,56 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Template name="Settings" src="UI_Settings.uxml" />
+    <ui:Style src="UI_Theme.uss" />
+    <ui:VisualElement class="screen" picking-mode="Ignore">
+        <ui:VisualElement name="safe-area" class="safe-area" picking-mode="Ignore">
+            <ui:VisualElement class="game-content" picking-mode="Ignore">
+                <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
+                    <ui:VisualElement class="hud-top" picking-mode="Ignore">
+                        <ui:VisualElement class="hud-wave panel">
+                            <ui:Label name="wave-label" text="WAVE --" class="hud-heading" />
+                            <ui:Label name="phase-label" text="AWAITING SIGNAL" class="label-dim" />
+                            <ui:Label name="remaining-label" text="REMAINING --" class="label-dim" />
+                        </ui:VisualElement>
+                        <ui:VisualElement class="hud-core panel">
+                            <ui:Label name="core-label" text="CORE -- / --" class="core-label" />
+                            <ui:VisualElement name="core-bar" class="bar">
+                                <ui:VisualElement name="core-bar-fill" class="bar__fill" style="width: 0%;" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                        <ui:VisualElement class="hud-resources" picking-mode="Ignore">
+                            <ui:VisualElement class="resource-row">
+                                <ui:Label name="biomass-label" text="BIO --" class="hud-pill" />
+                                <ui:Label name="scrap-label" text="SCRAP --" class="hud-pill" />
+                            </ui:VisualElement>
+                            <ui:Button name="pause-button" text="PAUSE" class="button" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="pause-screen" class="overlay" style="display: none;">
+                    <ui:VisualElement class="panel pause-panel">
+                        <ui:Label text="SYSTEM PAUSED" class="title" />
+                        <ui:Button name="resume-button" text="RESUME" class="button button--primary" />
+                        <ui:Button name="pause-settings-button" text="SETTINGS" class="button" />
+                        <ui:VisualElement class="button-row">
+                            <ui:Button name="restart-button" text="RESTART" class="button" />
+                            <ui:Button name="menu-button" text="MAIN MENU" class="button button--danger" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:Instance template="Settings" name="settings-panel" class="settings-overlay" style="display: none;" />
+                </ui:VisualElement>
+                <ui:VisualElement name="outcome-screen" class="overlay" style="display: none;">
+                    <ui:VisualElement class="panel outcome-panel">
+                        <ui:Label name="outcome-title" class="title" />
+                        <ui:Label name="outcome-wave" class="stat-row" />
+                        <ui:Label name="outcome-biomass" class="stat-row" />
+                        <ui:Label name="outcome-scrap" class="stat-row" />
+                        <ui:VisualElement class="button-row">
+                            <ui:Button name="outcome-restart-button" text="RESTART" class="button button--primary" />
+                            <ui:Button name="outcome-menu-button" text="MAIN MENU" class="button" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

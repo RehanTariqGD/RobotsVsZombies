@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Template name="Settings" src="UI_Settings.uxml" />
+    <ui:Style src="UI_Theme.uss" />
+    <ui:VisualElement class="screen screen--menu">
+        <ui:VisualElement name="backdrop" class="backdrop" picking-mode="Ignore" />
+        <ui:VisualElement name="safe-area" class="safe-area">
+            <ui:VisualElement class="game-content">
+                <ui:VisualElement class="menu-column">
+                    <ui:Label text="ZERO-SYNTH" class="title" />
+                    <ui:Label text="NEXUS NETWORK // PURGE PROTOCOL" class="subtitle" />
+                    <ui:Button name="play-button" text="PLAY" class="button button--primary" />
+                    <ui:Button name="settings-button" text="SETTINGS" class="button" />
+                    <ui:Button name="quit-button" text="QUIT" class="button button--danger" />
+                    <ui:Label name="version-label" class="label-dim version" />
+                </ui:VisualElement>
+                <ui:Instance template="Settings" name="settings-panel" class="settings-overlay" style="display: none;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
