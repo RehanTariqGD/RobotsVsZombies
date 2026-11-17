@@ -18,7 +18,7 @@ from zs_swarm import (GREEN, BROWN, DARK, BONE, CRIMSON, DEEP_RED, PUS, BLACK,
                       export_unit)
 
 
-def build():
+def build_spitter():
     zs.reset_scene()
     bm = bmesh.new()
 
@@ -66,9 +66,10 @@ def build():
             thorn(hand, (s * 0.10 * k, 0.45, -0.7), 0.16, 0.02)
 
     zs.jitter(bm, 0.008, seed=2024)
-    obj = zs.finish_mesh(bm, "ZS_Spitter_LOD0")
+    obj = zs.finish_mesh(bm, "SM_Spitter_LOD0")
     bpy.context.view_layer.update()
     return obj
 
 
-export_unit(build(), "ZS_Spitter_LOD0", budget=400)
+if __name__ == "__main__":
+    export_unit(build_spitter(), "SM_Spitter_LOD0", budget=400)

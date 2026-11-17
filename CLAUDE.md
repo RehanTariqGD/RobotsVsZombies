@@ -72,6 +72,33 @@ and is not on PATH. Scripted work uses `blender.exe -b -P script.py`. Scripts
 go in `Tools/Blender/` and are committed; they are the reproducible source of
 every mesh.
 
+## R9 — Naming conventions
+
+- C#: PascalCase types and methods, `m_Camel` private serialized fields,
+  one type per file, file name = type name. Namespace `ZeroSynth.<Area>`.
+- Assets are prefixed by type: `SM_` mesh, `T_` texture, `M_` material,
+  `PF_` prefab, `SC_` scene, `SO_` ScriptableObject, `UI_` UXML/USS,
+  `A_` audio. Meshes carry their LOD: `SM_Runner_LOD0`.
+- Scenes: `SC_Boot`, `SC_Loading`, `SC_MainMenu`, `SC_Game`.
+- Hierarchy groups are root GameObjects named `--- GROUP ---` at the origin,
+  with identity transforms, so children keep their world positions.
+
+## R10 — Project layout
+
+Everything lives under `Assets/ZeroSynth/`: `Art/{Models,Textures,Materials}`,
+`Audio`, `Prefabs`, `Scenes`, `UI`, `Settings`, plus the code folders
+`Runtime`, `Authoring`, `Game`, `Editor`. Nothing game-owned sits loose in
+`Assets/`. Template leftovers are removed, not kept "just in case".
+
+## R11 — Codex runs in parallel, in a worktree
+
+Independent work goes to Codex while Claude works on something else: issue the
+`ask_codex` call in the same message as Claude's own tool calls. Code Codex
+writes goes in a git worktree (`../RobotVsZombies_codex`) and is merged by
+Claude after review. Claude defines the API contract first so Codex's code
+compiles against real types. Art (images) is saved to a scratch folder and
+imported by Claude.
+
 ---
 
 ## Project facts

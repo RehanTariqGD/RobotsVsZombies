@@ -19,7 +19,7 @@ from zs_swarm import (GREEN, BROWN, DARK, BONE, CRIMSON, DEEP_RED, PUS, BLACK,
                       export_unit)
 
 
-def build():
+def build_burrower():
     zs.reset_scene()
     bm = bmesh.new()
 
@@ -64,9 +64,10 @@ def build():
         seg(foot, (s * 0.46, -0.28, 0.03), 0.22, 0.20, DARK, 0.10, 0.06)
 
     zs.jitter(bm, 0.010, seed=909)
-    obj = zs.finish_mesh(bm, "ZS_Burrower_LOD0")
+    obj = zs.finish_mesh(bm, "SM_Burrower_LOD0")
     bpy.context.view_layer.update()
     return obj
 
 
-export_unit(build(), "ZS_Burrower_LOD0", budget=400)
+if __name__ == "__main__":
+    export_unit(build_burrower(), "SM_Burrower_LOD0", budget=400)

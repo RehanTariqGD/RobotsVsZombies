@@ -3,7 +3,7 @@
 Run headless:
     blender.exe -b -P Tools/Blender/<script>.py
 
-Palette convention (matches ZS_Sentry_01): an 8-swatch strip, 64x8 pixels,
+Palette convention (shared by every unit): an 8-swatch strip, 64x8 pixels,
 each swatch 8px wide. Every face is UV-collapsed to the centre of one swatch,
 so a whole unit family shares one tiny texture and one material.
 """

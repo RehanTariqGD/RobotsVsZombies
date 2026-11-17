@@ -35,4 +35,4 @@ def export_unit(obj, name, budget):
           f"{d.x:.2f} x {d.y:.2f} x {d.z:.2f} m{flag}")
 
     zs.export_fbx(obj, os.path.join(out, name + ".fbx"))
-    zs.write_palette(os.path.join(out, "ZS_Palette_Swarm_BaseColor.png"), SWARM_PALETTE)
+    zs.write_palette(os.path.join(out, "T_Palette_Swarm_BaseColor.png"), SWARM_PALETTE)

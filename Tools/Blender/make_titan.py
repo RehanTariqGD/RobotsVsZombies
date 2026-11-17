@@ -20,7 +20,7 @@ from zs_swarm import (GREEN, BROWN, DARK, BONE, CRIMSON, DEEP_RED, PUS, BLACK,
                       export_unit)
 
 
-def build():
+def build_titan():
     zs.reset_scene()
     bm = bmesh.new()
 
@@ -83,9 +83,10 @@ def build():
                 0.05, 0.05, BLACK, 0.05, 0.05)
 
     zs.jitter(bm, 0.025, seed=4242)
-    obj = zs.finish_mesh(bm, "ZS_Titan_LOD0")
+    obj = zs.finish_mesh(bm, "SM_Titan_LOD0")
     bpy.context.view_layer.update()
     return obj
 
 
-export_unit(build(), "ZS_Titan_LOD0", budget=450)
+if __name__ == "__main__":
+    export_unit(build_titan(), "SM_Titan_LOD0", budget=450)

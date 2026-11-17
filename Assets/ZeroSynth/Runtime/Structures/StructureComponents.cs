@@ -10,7 +10,16 @@ namespace ZeroSynth
         Reactor = 2,
         Foundry = 3,
         Pylon = 4,
+
+        /// <summary>The objective. Losing it ends the run.</summary>
+        Core = 5,
     }
+
+    /// <summary>
+    /// Marks the objective structure. Exactly one exists per run; the game
+    /// flow reads its health for the lose condition.
+    /// </summary>
+    public struct Core : IComponentData { }
 
     public struct Structure : IComponentData
     {

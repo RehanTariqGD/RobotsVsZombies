@@ -73,7 +73,7 @@ def build_turret():
     # Rear heat vent, recessed.
     seg((0, -0.30, 0.86), (0, -0.18, 0.86), 0.34, 0.34, NAVY, 0.22, 0.22)
 
-    obj = zs.finish_mesh(bm, "ZS_Turret_Rail_LOD0")
+    obj = zs.finish_mesh(bm, "SM_Turret_Rail_LOD0")
     bpy.context.view_layer.update()
     return obj
 
@@ -87,10 +87,11 @@ def main():
     print(f"[ZS] Turret LOD0: {zs.triangle_count(obj)} tris, {len(obj.data.vertices)} verts, "
           f"{dims.x:.2f} x {dims.y:.2f} x {dims.z:.2f} m")
 
-    zs.export_fbx(obj, os.path.join(out, "ZS_Turret_Rail_LOD0.fbx"))
-    zs.write_palette(os.path.join(out, "ZS_Palette_Synth_BaseColor.png"), SYNTH_PALETTE)
-    zs.write_palette(os.path.join(out, "ZS_Palette_Synth_Emission.png"), SYNTH_EMISSION)
+    zs.export_fbx(obj, os.path.join(out, "SM_Turret_Rail_LOD0.fbx"))
+    zs.write_palette(os.path.join(out, "T_Palette_Synth_BaseColor.png"), SYNTH_PALETTE)
+    zs.write_palette(os.path.join(out, "T_Palette_Synth_Emission.png"), SYNTH_EMISSION)
     print(f"[ZS] wrote {out}")
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -67,9 +67,10 @@ def build_runner():
     # A little deterministic noise so no two limbs are machined-straight.
     zs.jitter(bm, 0.012, seed=1337)
 
-    obj = zs.finish_mesh(bm, "ZS_Runner_LOD0")
+    obj = zs.finish_mesh(bm, "SM_Runner_LOD0")
     bpy.context.view_layer.update()
     return obj
 
 
-export_unit(build_runner(), "ZS_Runner_LOD0", budget=400)
+if __name__ == "__main__":
+    export_unit(build_runner(), "SM_Runner_LOD0", budget=400)

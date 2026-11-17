@@ -1,0 +1,23 @@
+{
+    "name": "ZeroSynth.Game",
+    "rootNamespace": "ZeroSynth",
+    "references": [
+        "ZeroSynth.Runtime",
+        "ZeroSynth.Authoring",
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Transforms",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
