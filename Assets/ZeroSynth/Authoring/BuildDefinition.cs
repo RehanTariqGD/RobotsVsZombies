@@ -43,5 +43,12 @@ namespace ZeroSynth.Authoring
 
         [Header("Power (Kind = Pylon or Reactor)")]
         [Min(1f)] public float SupplyRange = 30f;
+
+        [Header("Foundry (Kind = Foundry)")]
+        [Tooltip("Biomass consumed per second while powered.")]
+        [Min(0.1f)] public float BiomassPerSecond = 10f;
+
+        [Tooltip("Scrap produced per biomass consumed.")]
+        [Min(0.1f)] public float ScrapPerBiomass = 1.5f;
     }
 }

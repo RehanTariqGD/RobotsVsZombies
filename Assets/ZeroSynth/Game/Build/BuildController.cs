@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -25,17 +26,32 @@ namespace ZeroSynth.Build
         }
     }
 
+    public enum BuildMode
+    {
+        None,
+
+        /// <summary>A structure is selected and a ground tap places it.</summary>
+        Place,
+
+        /// <summary>A tap on a structure restores it to full health for scrap.</summary>
+        Repair,
+
+        /// <summary>A tap on a structure removes it and refunds half its cost.</summary>
+        Sell,
+    }
+
     /// <summary>
-    /// Places structures on the grid for scrap.
+    /// Places, repairs and sells structures, all for scrap.
     /// </summary>
     /// <remarks>
     /// UI talks to this and never to the ECS world: it reads <see cref="Options"/>,
-    /// calls <see cref="Select"/> and <see cref="Cancel"/>, and listens to
+    /// calls <see cref="Select"/>, <see cref="SelectRepair"/>, <see cref="SelectSell"/>,
+    /// <see cref="Rotate"/> and <see cref="Cancel"/>, and listens to
     /// <see cref="SelectionChanged"/> and <see cref="Message"/>.
     ///
-    /// Selecting a structure engages the tactical pause, as in the GDD, so the
-    /// player can place walls against a breach without the breach getting worse.
-    /// Selection persists across placements, so several can be laid in one go.
+    /// Entering any mode engages the tactical pause, as in the GDD, so the player
+    /// can work on a breach without it getting worse. The mode persists across
+    /// actions, so several can be done in one go.
     /// </remarks>
     public sealed class BuildController : MonoBehaviour
     {
@@ -44,13 +60,20 @@ namespace ZeroSynth.Build
         [SerializeField] Camera m_Camera;
         [SerializeField] BuildDefinition[] m_Definitions = new BuildDefinition[0];
 
-        [Tooltip("Documents whose buttons must swallow taps, so pressing the build bar never places anything behind it.")]
+        [Tooltip("Documents whose buttons must swallow taps, so pressing the build bar never acts on the world behind it.")]
         [SerializeField] UIDocument[] m_BlockingDocuments = new UIDocument[0];
 
         [SerializeField] float m_GroundHeight;
 
+        [Tooltip("Scrap per point of missing health when repairing.")]
+        [SerializeField, Min(0f)] float m_RepairCostPerHealth = 0.15f;
+
+        [Tooltip("Fraction of the build cost returned when selling.")]
+        [SerializeField, Range(0f, 1f)] float m_SellRefund = 0.5f;
+
         static readonly Color s_Valid = new Color(0.2f, 1f, 0.45f, 0.95f);
         static readonly Color s_Invalid = new Color(1f, 0.25f, 0.25f, 0.95f);
+        static readonly Color s_Sell = new Color(1f, 0.65f, 0.15f, 0.95f);
 
         readonly List<BuildOption> m_Options = new List<BuildOption>();
 
@@ -65,10 +88,22 @@ namespace ZeroSynth.Build
         bool m_PressBlocked;
 
         public IReadOnlyList<BuildOption> Options => m_Options;
-        public bool HasSelection { get; private set; }
+
+        public BuildMode Mode { get; private set; }
+
+        /// <summary>Any mode is active. Kept for UI that only needs to know whether to show Cancel.</summary>
+        public bool HasSelection => Mode != BuildMode.None;
+
+        /// <summary>The structure being placed. Meaningful only in <see cref="BuildMode.Place"/>.</summary>
         public StructureKind Selected { get; private set; }
 
-        /// <summary>Raised when the selection changes or is cleared.</summary>
+        /// <summary>The placement is turned a quarter turn, swapping its footprint's axes.</summary>
+        public bool Rotated { get; private set; }
+
+        /// <summary>Rotating would change something: placing a structure with a non-square footprint.</summary>
+        public bool CanRotate => Mode == BuildMode.Place && m_Active != null && m_Active.Footprint.x != m_Active.Footprint.y;
+
+        /// <summary>Raised when the mode, selection or rotation changes.</summary>
         public event Action SelectionChanged;
 
         /// <summary>Short upper-case feedback for the UI, e.g. "NOT ENOUGH SCRAP".</summary>
@@ -112,7 +147,40 @@ namespace ZeroSynth.Build
 
             m_Active = def;
             Selected = kind;
-            HasSelection = true;
+            Rotated = false;
+            Enter(BuildMode.Place);
+        }
+
+        public void SelectRepair()
+        {
+            m_Active = null;
+            Enter(BuildMode.Repair);
+        }
+
+        public void SelectSell()
+        {
+            m_Active = null;
+            Enter(BuildMode.Sell);
+        }
+
+        /// <summary>Turns the structure being placed. Walls and foundries are not square.</summary>
+        public void Rotate()
+        {
+            if (!CanRotate) return;
+            Rotated = !Rotated;
+            SelectionChanged?.Invoke();
+        }
+
+        public void Cancel()
+        {
+            if (!HasSelection) return;
+            Release();
+            SelectionChanged?.Invoke();
+        }
+
+        void Enter(BuildMode mode)
+        {
+            Mode = mode;
             PossessionController.BuildModeActive = true;
 
             var flow = GameFlow.Instance;
@@ -125,17 +193,11 @@ namespace ZeroSynth.Build
             SelectionChanged?.Invoke();
         }
 
-        public void Cancel()
-        {
-            if (!HasSelection) return;
-            Release();
-            SelectionChanged?.Invoke();
-        }
-
         void Release()
         {
-            HasSelection = false;
+            Mode = BuildMode.None;
             m_Active = null;
+            Rotated = false;
             PossessionController.BuildModeActive = false;
             if (m_Outline != null) m_Outline.enabled = false;
 
@@ -161,26 +223,52 @@ namespace ZeroSynth.Build
             if (!Bind()) return;
 
             var pointer = Pointer.current;
+            var keyboard = Keyboard.current;
+
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
+                Rotate();
+
             if (pointer == null) return;
 
             Vector2 screen = pointer.position.ReadValue();
 
-            // A press that began on the build bar must not place on release,
-            // even if the finger slid onto the ground first.
+            // A press that began on the build bar must not act on release, even
+            // if the finger slid onto the ground first.
             if (pointer.press.wasPressedThisFrame)
                 m_PressBlocked = IsOverBlockingUi(screen);
 
             if (!TryGetGroundPoint(screen, out float3 ground))
                 return;
 
+            bool released = pointer.press.wasReleasedThisFrame && !m_PressBlocked;
+
+            if (Mode == BuildMode.Place)
+                UpdatePlace(ground, released);
+            else
+                UpdateTool(ground, released);
+        }
+
+        // ---------------------------------------------------------------
+        // Placing
+        // ---------------------------------------------------------------
+
+        int2 CurrentFootprint()
+        {
+            return Rotated
+                ? new int2(m_Active.Footprint.y, m_Active.Footprint.x)
+                : new int2(m_Active.Footprint.x, m_Active.Footprint.y);
+        }
+
+        void UpdatePlace(float3 ground, bool released)
+        {
             var config = m_Grid.Config;
-            var footprint = new int2(m_Active.Footprint.x, m_Active.Footprint.y);
+            int2 footprint = CurrentFootprint();
             int2 anchor = config.AnchorForCentre(ground, footprint);
 
             bool valid = IsBuildable(config, anchor, footprint, out string reason);
-            DrawOutline(config, anchor, footprint, valid);
+            DrawOutline(config, anchor, footprint, valid ? s_Valid : s_Invalid);
 
-            if (pointer.press.wasReleasedThisFrame && !m_PressBlocked)
+            if (released)
                 TryPlace(config, anchor, valid, reason);
         }
 
@@ -193,18 +281,13 @@ namespace ZeroSynth.Build
             }
 
             float cost = StructureCosts.Scrap(m_Active.Kind);
-            if (ReadScrap() < cost)
+            if (!TrySpend(cost))
             {
                 Message?.Invoke("NOT ENOUGH SCRAP");
                 return;
             }
 
-            var economyEntity = m_EconomyQuery.GetSingletonEntity();
-            var economy = m_EntityManager.GetComponentData<Economy>(economyEntity);
-            economy.MetalScrap -= cost;
-            m_EntityManager.SetComponentData(economyEntity, economy);
-
-            StructureSpawner.Spawn(m_EntityManager, config, m_Active, anchor);
+            StructureSpawner.Spawn(m_EntityManager, config, m_Active, anchor, Rotated);
             Message?.Invoke(m_Active.Label.ToUpperInvariant() + " BUILT");
         }
 
@@ -257,9 +340,9 @@ namespace ZeroSynth.Build
         /// </remarks>
         bool OverlapsLiveStructure(int2 anchor, int2 footprint)
         {
-            var anchors = m_StructureQuery.ToComponentDataArray<GridAnchor>(Unity.Collections.Allocator.Temp);
-            var sizes = m_StructureQuery.ToComponentDataArray<Structure>(Unity.Collections.Allocator.Temp);
-            var healths = m_StructureQuery.ToComponentDataArray<Health>(Unity.Collections.Allocator.Temp);
+            var anchors = m_StructureQuery.ToComponentDataArray<GridAnchor>(Allocator.Temp);
+            var sizes = m_StructureQuery.ToComponentDataArray<Structure>(Allocator.Temp);
+            var healths = m_StructureQuery.ToComponentDataArray<Health>(Allocator.Temp);
 
             bool overlaps = false;
             for (int i = 0; i < anchors.Length && !overlaps; i++)
@@ -280,7 +363,124 @@ namespace ZeroSynth.Build
             return overlaps;
         }
 
-        void DrawOutline(GridConfig config, int2 anchor, int2 footprint, bool valid)
+        // ---------------------------------------------------------------
+        // Repair and sell
+        // ---------------------------------------------------------------
+
+        void UpdateTool(float3 ground, bool released)
+        {
+            var config = m_Grid.Config;
+            int2 cell = config.WorldToCell(ground);
+
+            Entity target = FindStructureAt(cell, out int2 anchor, out int2 size);
+
+            if (target == Entity.Null)
+            {
+                DrawOutline(config, cell, new int2(1, 1), s_Invalid);
+                if (released) Message?.Invoke("NO STRUCTURE");
+                return;
+            }
+
+            DrawOutline(config, anchor, size, Mode == BuildMode.Sell ? s_Sell : s_Valid);
+
+            if (!released) return;
+
+            if (Mode == BuildMode.Repair) Repair(target);
+            else Sell(target);
+        }
+
+        /// <summary>The live structure covering a cell, if any.</summary>
+        Entity FindStructureAt(int2 cell, out int2 anchor, out int2 size)
+        {
+            anchor = default;
+            size = default;
+
+            var entities = m_StructureQuery.ToEntityArray(Allocator.Temp);
+            var anchors = m_StructureQuery.ToComponentDataArray<GridAnchor>(Allocator.Temp);
+            var sizes = m_StructureQuery.ToComponentDataArray<Structure>(Allocator.Temp);
+            var healths = m_StructureQuery.ToComponentDataArray<Health>(Allocator.Temp);
+
+            Entity found = Entity.Null;
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (healths[i].Current <= 0f) continue;
+
+                int2 min = anchors[i].Cell;
+                int2 extent = math.max(sizes[i].Footprint, new int2(1, 1));
+                int2 max = min + extent;
+
+                if (cell.x < min.x || cell.x >= max.x || cell.y < min.y || cell.y >= max.y)
+                    continue;
+
+                found = entities[i];
+                anchor = min;
+                size = extent;
+                break;
+            }
+
+            entities.Dispose();
+            anchors.Dispose();
+            sizes.Dispose();
+            healths.Dispose();
+            return found;
+        }
+
+        void Repair(Entity entity)
+        {
+            var health = m_EntityManager.GetComponentData<Health>(entity);
+            float missing = health.Max - health.Current;
+
+            if (missing < 0.5f)
+            {
+                Message?.Invoke("NOTHING TO REPAIR");
+                return;
+            }
+
+            float cost = Mathf.Max(1f, Mathf.Ceil(missing * m_RepairCostPerHealth));
+            if (!TrySpend(cost))
+            {
+                Message?.Invoke("NOT ENOUGH SCRAP");
+                return;
+            }
+
+            health.Current = health.Max;
+            m_EntityManager.SetComponentData(entity, health);
+            Message?.Invoke("REPAIRED");
+        }
+
+        void Sell(Entity entity)
+        {
+            var structure = m_EntityManager.GetComponentData<Structure>(entity);
+            float refund = Mathf.Floor(StructureCosts.Scrap(structure.Kind) * m_SellRefund);
+
+            var economyEntity = m_EconomyQuery.GetSingletonEntity();
+            var economy = m_EntityManager.GetComponentData<Economy>(economyEntity);
+            economy.MetalScrap += refund;
+            m_EntityManager.SetComponentData(economyEntity, economy);
+
+            // The grid, the power network and the wall costs all notice a
+            // structure vanishing: each rebuilds when its signature changes.
+            m_EntityManager.DestroyEntity(entity);
+            Message?.Invoke("SOLD +" + refund.ToString("0"));
+        }
+
+        // ---------------------------------------------------------------
+        // Shared
+        // ---------------------------------------------------------------
+
+        bool TrySpend(float cost)
+        {
+            if (ReadScrap() < cost)
+                return false;
+
+            var economyEntity = m_EconomyQuery.GetSingletonEntity();
+            var economy = m_EntityManager.GetComponentData<Economy>(economyEntity);
+            economy.MetalScrap -= cost;
+            m_EntityManager.SetComponentData(economyEntity, economy);
+            return true;
+        }
+
+        void DrawOutline(GridConfig config, int2 anchor, int2 footprint, Color colour)
         {
             float3 centre = config.FootprintCentre(anchor, footprint);
             float hx = footprint.x * config.CellSize * 0.5f;
@@ -291,7 +491,7 @@ namespace ZeroSynth.Build
             m_Outline.SetPosition(1, new Vector3(centre.x + hx, y, centre.z - hz));
             m_Outline.SetPosition(2, new Vector3(centre.x + hx, y, centre.z + hz));
             m_Outline.SetPosition(3, new Vector3(centre.x - hx, y, centre.z + hz));
-            m_Outline.startColor = m_Outline.endColor = valid ? s_Valid : s_Invalid;
+            m_Outline.startColor = m_Outline.endColor = colour;
             m_Outline.enabled = true;
         }
 

@@ -18,9 +18,13 @@ namespace ZeroSynth.Authoring
     /// </remarks>
     public static class StructureSpawner
     {
-        public static Entity Spawn(EntityManager em, GridConfig config, BuildDefinition def, int2 anchor)
+        public static Entity Spawn(EntityManager em, GridConfig config, BuildDefinition def, int2 anchor, bool rotated = false)
         {
-            var footprint = new int2(def.Footprint.x, def.Footprint.y);
+            // Rotation swaps the footprint's axes. Square footprints are
+            // unaffected, so callers can pass it unconditionally.
+            var footprint = rotated
+                ? new int2(def.Footprint.y, def.Footprint.x)
+                : new int2(def.Footprint.x, def.Footprint.y);
             var entity = em.CreateEntity();
             em.SetName(entity, "Built_" + def.Label);
 
@@ -45,6 +49,18 @@ namespace ZeroSynth.Authoring
                 case StructureKind.Pylon:
                 case StructureKind.Reactor:
                     AddPowerNode(em, entity, def);
+                    break;
+
+                case StructureKind.Foundry:
+                    // A consumer: it needs power to run but cannot relay it.
+                    em.AddComponentData(entity, new Foundry
+                    {
+                        BiomassPerSecond = def.BiomassPerSecond,
+                        ScrapPerBiomass = def.ScrapPerBiomass
+                    });
+                    em.AddComponentData(entity, new PowerNode { SupplyRange = 0f, IsSource = false });
+                    em.AddComponent<Powered>(entity);
+                    em.SetComponentEnabled<Powered>(entity, false);
                     break;
             }
 

@@ -42,5 +42,11 @@ namespace ZeroSynth.Flow
         public int WavesToWin;
         public float Biomass;
         public float Scrap;
+
+        /// <summary>Highest wave reached in any run, including this one.</summary>
+        public int BestWave;
+
+        /// <summary>This run beat the previous best.</summary>
+        public bool NewBest;
     }
 }

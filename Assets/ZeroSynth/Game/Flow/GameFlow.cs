@@ -43,6 +43,9 @@ namespace ZeroSynth.Flow
         public GameSettings Settings { get; private set; }
         public int WavesToWin => m_WavesToWin;
 
+        /// <summary>Highest wave cleared in any run. Zero if none yet.</summary>
+        public int BestWave => PlayerRecords.BestWave;
+
         /// <summary>(previous, current).</summary>
         public event Action<GameState, GameState> StateChanged;
 
@@ -249,13 +252,21 @@ namespace ZeroSynth.Flow
 
         void EndRun(bool won)
         {
+            // Losing during wave N means wave N was reached but not cleared, so
+            // it counts for less than clearing it. The wave index counts waves
+            // begun, so a loss is recorded one lower.
+            int cleared = won ? Snapshot.Wave : Mathf.Max(0, Snapshot.Wave - 1);
+            bool newBest = PlayerRecords.SubmitWave(cleared);
+
             Outcome = new RunOutcome
             {
                 Won = won,
                 WaveReached = Snapshot.Wave,
                 WavesToWin = m_WavesToWin,
                 Biomass = Snapshot.Biomass,
-                Scrap = Snapshot.Scrap
+                Scrap = Snapshot.Scrap,
+                BestWave = PlayerRecords.BestWave,
+                NewBest = newBest
             };
 
             m_Reader.SetSimulationPaused(true);

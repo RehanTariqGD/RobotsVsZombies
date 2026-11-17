@@ -43,6 +43,19 @@ namespace ZeroSynth
     public struct Wall : IComponentData { }
 
     /// <summary>
+    /// Turns biomass from kills into scrap while powered. This is what gives
+    /// biomass a use: it is otherwise only ever collected.
+    /// </summary>
+    public struct Foundry : IComponentData
+    {
+        /// <summary>Biomass consumed per second at full output.</summary>
+        public float BiomassPerSecond;
+
+        /// <summary>Scrap produced for each biomass consumed.</summary>
+        public float ScrapPerBiomass;
+    }
+
+    /// <summary>
     /// Melee capability. Separate from <see cref="HordeAgent"/> so the
     /// movement job does not drag combat fields through cache every frame.
     /// </summary>
