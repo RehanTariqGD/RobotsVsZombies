@@ -19,8 +19,14 @@ namespace ZeroSynth.Authoring
     {
         public string Name;
         public UnitKind Kind;
-        public Mesh Mesh;
+
+        [Tooltip("LOD0 (full) to LOD3 (impostor). Missing tiers reuse the last one given.")]
+        public Mesh[] Meshes = new Mesh[4];
+
         public Material Material;
+
+        [Tooltip("Real height in metres. The LOD tier is chosen from how tall this is on screen.")]
+        [Min(0.1f)] public float Height = 1.8f;
 
         [Tooltip("Allocated once at load. Hard ceiling on concurrent agents of this kind.")]
         [Min(0)] public int PoolSize = 1000;
@@ -119,26 +125,26 @@ namespace ZeroSynth.Authoring
                 new UnitDefinition
                 {
                     Name = "Runner", Kind = UnitKind.Runner, PoolSize = 5200,
-                    Health = 30f, MinSpeed = 1.5f, MaxSpeed = 4f, Bounty = 1f,
+                    Health = 30f, MinSpeed = 1.5f, MaxSpeed = 4f, Bounty = 1f, Height = 1.8f,
                     MeleeDamage = 8f, MeleeRate = 1f, MeleeReach = 1.2f,
                 },
                 new UnitDefinition
                 {
                     Name = "Spitter", Kind = UnitKind.Spitter, PoolSize = 1500,
-                    Health = 45f, MinSpeed = 1.2f, MaxSpeed = 2.2f, Bounty = 2f,
+                    Health = 45f, MinSpeed = 1.2f, MaxSpeed = 2.2f, Bounty = 2f, Height = 1.9f,
                     MeleeDamage = 0f,
                     RangedDamage = 14f, RangedRate = 0.7f, RangedRange = 14f,
                 },
                 new UnitDefinition
                 {
                     Name = "Burrower", Kind = UnitKind.Burrower, PoolSize = 1000,
-                    Health = 70f, MinSpeed = 2f, MaxSpeed = 3f, Bounty = 3f,
+                    Health = 70f, MinSpeed = 2f, MaxSpeed = 3f, Bounty = 3f, Height = 1.3f,
                     MeleeDamage = 14f, MeleeRate = 1f, MeleeReach = 1.4f,
                 },
                 new UnitDefinition
                 {
                     Name = "Meat Titan", Kind = UnitKind.Titan, PoolSize = 24,
-                    Health = 1800f, MinSpeed = 0.9f, MaxSpeed = 1.3f, Bounty = 40f,
+                    Health = 1800f, MinSpeed = 0.9f, MaxSpeed = 1.3f, Bounty = 40f, Height = 5f,
                     MeleeDamage = 70f, MeleeRate = 0.7f, MeleeReach = 3f,
                 },
             };
@@ -178,9 +184,10 @@ namespace ZeroSynth.Authoring
 
             foreach (var unit in m_Units)
             {
-                if (unit.PoolSize > 0 && (unit.Mesh == null || unit.Material == null))
+                if (unit.PoolSize > 0 && (unit.Meshes == null || unit.Meshes.Length == 0
+                                          || unit.Meshes[0] == null || unit.Material == null))
                 {
-                    Debug.LogError($"[ZeroSynth] Unit '{unit.Name}' needs both a Mesh and a Material.", this);
+                    Debug.LogError($"[ZeroSynth] Unit '{unit.Name}' needs a LOD0 mesh and a Material.", this);
                     return false;
                 }
             }
@@ -352,9 +359,21 @@ namespace ZeroSynth.Authoring
                 shadowCastingMode: m_CastShadows ? ShadowCastingMode.On : ShadowCastingMode.Off,
                 receiveShadows: false);
 
+            // All four tiers live in one RenderMeshArray, so the LOD system
+            // changes tier by writing an index, never by a structural change.
+            // A missing tier reuses the last one supplied.
+            var meshes = new Mesh[4];
+            Mesh last = unit.Meshes[0];
+            for (int i = 0; i < meshes.Length; i++)
+            {
+                if (i < unit.Meshes.Length && unit.Meshes[i] != null)
+                    last = unit.Meshes[i];
+                meshes[i] = last;
+            }
+
             var renderMeshArray = new RenderMeshArray(
                 new[] { unit.Material },
-                new[] { unit.Mesh },
+                meshes,
                 null);
 
             var prototype = m_EntityManager.CreateEntity();
@@ -371,6 +390,7 @@ namespace ZeroSynth.Authoring
             m_EntityManager.AddComponentData(prototype, new HordeAgent { Speed = 1f });
             m_EntityManager.AddComponentData(prototype, new Health { Current = unit.Health, Max = unit.Health });
             m_EntityManager.AddComponentData(prototype, new Bounty { Biomass = unit.Bounty });
+            m_EntityManager.AddComponentData(prototype, new LodHeight { Meters = unit.Height });
             m_EntityManager.AddSharedComponent(prototype, new AgentKind { Value = unit.Kind });
 
             if (unit.MeleeDamage > 0f)
