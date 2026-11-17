@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using UnityEngine;
 using UnityEngine.UIElements;
+using ZeroSynth.Authoring;
 using ZeroSynth.Build;
 using ZeroSynth.Flow;
 
@@ -15,7 +16,8 @@ namespace ZeroSynth.UI
         BuildController m_Build;
         VisualElement m_Screen, m_OptionsRoot;
         Button m_PauseButton, m_CancelButton;
-        Label m_Toast, m_PausedPill;
+        Label m_Toast, m_PausedPill, m_Hint;
+        int m_HintKey = -1;
         SafeAreaPadding m_SafeArea;
         BuildOption[] m_Options = Array.Empty<BuildOption>();
         Button[] m_Buttons = Array.Empty<Button>();
@@ -34,6 +36,8 @@ namespace ZeroSynth.UI
             m_CancelButton = root.Q<Button>("cancel-button");
             m_Toast = root.Q<Label>("build-toast");
             m_PausedPill = root.Q<Label>("paused-pill");
+            m_Hint = root.Q<Label>("controls-hint");
+            m_HintKey = -1;
             m_SafeArea = new SafeAreaPadding(root.Q("safe-area"));
             m_PauseButton.clicked += TogglePause;
             m_CancelButton.clicked += Cancel;
@@ -94,11 +98,38 @@ namespace ZeroSynth.UI
             RefreshAffordability();
         }
 
+        /// <summary>
+        /// Tells the player what a tap and a drag do right now. The same gesture
+        /// means different things while building, aiming a turret and driving
+        /// the mech, and nothing else on screen says which is active.
+        /// </summary>
+        static readonly string[] s_Hints =
+        {
+            "TAP A TURRET OR THE MECH TO TAKE CONTROL\nESC: PAUSE MENU",
+            "AIMING TURRET\nHOLD AND DRAG: AIM  |  TAP IT AGAIN OR SPACE: RELEASE",
+            "DRIVING MECH\nDRAG OR WASD: MOVE  |  TAP IT AGAIN OR SPACE: RELEASE",
+            "BUILDING\nTAP THE GROUND TO PLACE  |  CANCEL WHEN DONE"
+        };
+
+        void RefreshHint()
+        {
+            int key;
+            if (m_Build != null && m_Build.HasSelection) key = 3;
+            else if (PossessionController.ActiveMode == PossessionMode.Turret) key = 1;
+            else if (PossessionController.ActiveMode == PossessionMode.Mech) key = 2;
+            else key = 0;
+
+            if (key == m_HintKey) return;
+            m_HintKey = key;
+            m_Hint.text = s_Hints[key];
+        }
+
         void Update()
         {
             m_SafeArea.Update();
             BindFlow();
             BindBuild();
+            RefreshHint();
             RefreshAffordability();
             if (m_ToastVisible && Time.unscaledTime >= m_ToastUntil) HideToast();
         }

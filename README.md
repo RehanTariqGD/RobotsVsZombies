@@ -10,9 +10,23 @@ landscape only. Working rules for contributors, human or AI, are in
 
 ## Running it
 
-Open the project and **press Play from `SC_Boot`**, not from `SC_Game`.
-`SC_Boot` creates `GameFlow`, which owns the menus, pause, win and lose.
-Pressing Play in `SC_Game` runs the simulation without any of that.
+Press Play from `SC_Boot` for the full flow. To work on gameplay, press Play
+from `SC_Game` directly: it carries a dev `GameFlow` that joins the run already
+in progress, so the HUD, build bar and pause all work. In a normal run that
+copy is a duplicate and removes itself.
+
+`GameFlow` owns the menus, pause, win and lose.
+
+### Controls
+
+| | Touch | Editor |
+|---|---|---|
+| Take control of a turret or the mech | tap it | click it |
+| Aim a possessed turret | hold and drag | hold and drag |
+| Drive the possessed mech | drag anywhere | WASD / arrows |
+| Release | tap it again | tap it again, or Space |
+| Build | pick a structure on the bar, tap the ground | same |
+| Pause menu | pause button, top right | Esc |
 
 Scene order: `SC_Boot` → `SC_Loading` → `SC_MainMenu` → `SC_Game`.
 

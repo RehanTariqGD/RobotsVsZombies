@@ -75,7 +75,17 @@ namespace ZeroSynth.Flow
 
         void Start()
         {
-            if (Instance == this && State == GameState.Boot)
+            if (Instance != this || State != GameState.Boot)
+                return;
+
+            // Pressing Play in the game scene itself, which is what happens when
+            // working on it in the editor: there is no boot to come from, so
+            // join the run already in progress instead of leaving for the menu.
+            // In a normal run SC_Game's own GameFlow is the duplicate, and is
+            // destroyed in Awake before it gets here.
+            if (SceneManager.GetActiveScene().name == SceneNames.Game)
+                SetState(GameState.Playing);
+            else
                 StartCoroutine(TransitionTo(SceneNames.MainMenu, GameState.MainMenu));
         }
 

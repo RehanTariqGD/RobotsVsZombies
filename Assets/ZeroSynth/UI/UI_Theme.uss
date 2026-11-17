@@ -91,3 +91,6 @@
 .button.build-option--locked { opacity: 0.5; }
 .build-toast { background-color: var(--panel); border-width: 1px; border-color: var(--border); border-radius: 3px; color: var(--text); padding: 10px 16px; margin-bottom: 12px; -unity-font-style: bold; -unity-text-align: middle-center; }
 .build-paused-pill { margin-left: 0; color: var(--accent); font-size: 16px; letter-spacing: 2px; }
+
+/* Controls hint */
+.controls-hint { position: absolute; left: 16px; bottom: 16px; max-width: 30%; white-space: normal; padding: 10px 14px; background-color: rgba(14, 18, 22, 0.75); border-width: 1px; border-color: var(--border); border-radius: 3px; letter-spacing: 1px; }

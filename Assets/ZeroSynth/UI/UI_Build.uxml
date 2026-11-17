@@ -4,6 +4,7 @@
         <ui:VisualElement name="safe-area" class="safe-area" picking-mode="Ignore">
             <ui:VisualElement class="build-content" picking-mode="Ignore">
                 <ui:Label name="paused-pill" text="TACTICAL PAUSE" class="hud-pill build-paused-pill" picking-mode="Ignore" style="display: none;" />
+                <ui:Label name="controls-hint" class="label-dim controls-hint" picking-mode="Ignore" />
                 <ui:VisualElement class="build-spacer" picking-mode="Ignore" />
                 <ui:VisualElement class="build-dock" picking-mode="Ignore">
                     <ui:Label name="build-toast" class="build-toast" picking-mode="Ignore" style="display: none;" />

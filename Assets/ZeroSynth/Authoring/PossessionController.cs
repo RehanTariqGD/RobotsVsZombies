@@ -37,7 +37,15 @@ namespace ZeroSynth.Authoring
         Entity m_StateEntity;
         bool m_Ready;
         bool m_WasPressed;
+        bool m_PressMoved;
+        float m_PressTime;
         Vector2 m_PressOrigin;
+
+        /// <summary>Pixels a press may drift and still count as a tap.</summary>
+        const float TapMoveTolerance = 24f;
+
+        /// <summary>Longest press, in seconds, that still counts as a tap.</summary>
+        const float TapMaxSeconds = 0.35f;
 
         /// <summary>
         /// Set false while a menu or overlay is up. This controller polls the
@@ -53,6 +61,9 @@ namespace ZeroSynth.Authoring
         /// rather than possessing a turret.
         /// </summary>
         public static bool BuildModeActive;
+
+        /// <summary>What the player is currently driving, for UI hints. Static so UI need not find the instance.</summary>
+        public static PossessionMode ActiveMode { get; private set; }
 
         public Entity Possessed { get; private set; }
         public PossessionMode Mode { get; private set; }
@@ -112,10 +123,10 @@ namespace ZeroSynth.Authoring
             if (!m_Ready || !InputEnabled || BuildModeActive) return;
 
             var pointer = Pointer.current;
-            if (pointer == null) return;
+            var keyboard = Keyboard.current;
 
-            Vector2 screen = pointer.position.ReadValue();
-            bool pressed = pointer.press.isPressed;
+            Vector2 screen = pointer != null ? pointer.position.ReadValue() : Vector2.zero;
+            bool pressed = pointer != null && pointer.press.isPressed;
             bool justPressed = pressed && !m_WasPressed;
             bool justReleased = !pressed && m_WasPressed;
             m_WasPressed = pressed;
@@ -123,9 +134,26 @@ namespace ZeroSynth.Authoring
             if (justPressed)
             {
                 m_PressOrigin = screen;
+                m_PressTime = Time.unscaledTime;
+                m_PressMoved = false;
+            }
+
+            if (pressed && !m_PressMoved
+                && (screen - m_PressOrigin).sqrMagnitude > TapMoveTolerance * TapMoveTolerance)
+                m_PressMoved = true;
+
+            // A tap is a quick press that never moved, decided on release. It
+            // has to be: the same gesture starts a drag, and deciding on press
+            // made every drag to steer the mech also read as a tap on it, which
+            // released it again.
+            if (justReleased && !m_PressMoved && Time.unscaledTime - m_PressTime <= TapMaxSeconds)
+            {
                 if (TryGetGroundPoint(screen, out float3 tapGround))
                     HandleTap(tapGround);
             }
+
+            if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && Possessed != Entity.Null)
+                Release();
 
             if (Mode == PossessionMode.Turret && pressed)
             {
@@ -135,21 +163,34 @@ namespace ZeroSynth.Authoring
             }
             else if (Mode == PossessionMode.Mech)
             {
-                // Drag from the press point acts as a virtual stick. Screen
-                // space, not world space, so the stick stays consistent while
-                // the follow camera moves under it.
-                float2 stick = pressed
+                // A drag from the press point acts as a virtual stick, in screen
+                // space so it stays consistent while the follow camera moves
+                // under it. Keys take over when held, for testing in the editor.
+                float2 stick = pressed && m_PressMoved
                     ? (float2)((screen - m_PressOrigin) / m_StickRange)
                     : float2.zero;
+
+                float2 keys = ReadMoveKeys(keyboard);
+                if (math.lengthsq(keys) > 0f)
+                    stick = keys;
 
                 float magnitude = math.length(stick);
                 if (magnitude > 1f) stick /= magnitude;
 
                 SetMoveInput(stick);
             }
+        }
 
-            if (justReleased && Mode == PossessionMode.Mech)
-                SetMoveInput(float2.zero);
+        static float2 ReadMoveKeys(Keyboard keyboard)
+        {
+            if (keyboard == null) return float2.zero;
+
+            float x = 0f, y = 0f;
+            if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) x += 1f;
+            if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed) x -= 1f;
+            if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed) y += 1f;
+            if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
+            return new float2(x, y);
         }
 
         void HandleTap(float3 ground)
@@ -189,6 +230,7 @@ namespace ZeroSynth.Authoring
 
             Possessed = entity;
             Mode = mode;
+            ActiveMode = mode;
 
             var state = m_EntityManager.GetComponentData<PossessionState>(m_StateEntity);
             state.Current = entity;
@@ -212,6 +254,7 @@ namespace ZeroSynth.Authoring
 
             Possessed = Entity.Null;
             Mode = PossessionMode.None;
+            ActiveMode = PossessionMode.None;
 
             var state = m_EntityManager.GetComponentData<PossessionState>(m_StateEntity);
             state.Current = Entity.Null;
