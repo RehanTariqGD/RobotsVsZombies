@@ -6,8 +6,8 @@ using UnityEngine;
 namespace ZeroSynth.Authoring
 {
     /// <summary>
-    /// Moves the camera into a follow position while a mech is possessed, and
-    /// applies that mode's quality profile.
+    /// Moves the camera into a follow position while the mech is being driven,
+    /// and applies that mode's quality profile.
     /// </summary>
     /// <remarks>
     /// Every frame budget in the technical review assumes the tactical
@@ -52,6 +52,9 @@ namespace ZeroSynth.Authoring
         [SerializeField, Min(0.5f)] float m_MechPitch = 35f;
         [SerializeField, Min(0.1f)] float m_FollowLerp = 6f;
 
+        [Tooltip("Seconds the camera stays close after the stick is released.")]
+        [SerializeField, Min(0f)] float m_IdleSeconds = 1.2f;
+
         [SerializeField] Profile m_MechProfile = new Profile
         {
             FarClip = 120f,
@@ -66,6 +69,7 @@ namespace ZeroSynth.Authoring
         Vector3 m_TacticalPosition;
         Quaternion m_TacticalRotation;
         PossessionMode m_AppliedMode = PossessionMode.None;
+        float m_LastDriveTime = float.NegativeInfinity;
 
         void Start()
         {
@@ -98,14 +102,24 @@ namespace ZeroSynth.Authoring
                         && m_EntityManager.Exists(state.Current)
                         && m_EntityManager.HasComponent<LocalTransform>(state.Current);
 
-            var wanted = mech ? PossessionMode.Mech : PossessionMode.None;
+            // The camera only drops in while the mech is actually being driven.
+            // Possessing it alone keeps the overview, so clicking the mech does
+            // not lurch the view. It stays close for a moment after the stick is
+            // released, otherwise stopping to turn would bounce the camera in
+            // and out.
+            if (mech && math.lengthsq(state.MoveInput) > 0.0025f)
+                m_LastDriveTime = Time.unscaledTime;
+
+            bool driving = mech && Time.unscaledTime - m_LastDriveTime < m_IdleSeconds;
+
+            var wanted = driving ? PossessionMode.Mech : PossessionMode.None;
             if (wanted != m_AppliedMode)
             {
-                Apply(mech ? m_MechProfile : m_TacticalProfile);
+                Apply(driving ? m_MechProfile : m_TacticalProfile);
                 m_AppliedMode = wanted;
             }
 
-            if (mech)
+            if (driving)
             {
                 float3 pivot = m_EntityManager.GetComponentData<LocalTransform>(state.Current).Position;
 
