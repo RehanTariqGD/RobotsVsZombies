@@ -86,6 +86,27 @@ namespace ZeroSynth
 
         /// <summary>Scrap awarded for clearing a wave.</summary>
         public float ScrapPerWave;
+
+        /// <summary>
+        /// Width in radians of each arc a wave spawns from. Zero or less means
+        /// the old behaviour: the whole ring.
+        /// </summary>
+        public float FrontArc;
+    }
+
+    /// <summary>
+    /// Where a wave comes from: up to three arcs of the spawn ring, as angles
+    /// around the objective.
+    /// </summary>
+    public struct SpawnFronts
+    {
+        public int Count;
+
+        /// <summary>Centre angle of each arc. Only the first <see cref="Count"/> are meaningful.</summary>
+        public float3 Angle;
+
+        /// <summary>Arc width in radians. Zero means a full ring and Count is 1.</summary>
+        public float Arc;
     }
 
     public struct WaveState : IComponentData

@@ -91,6 +91,8 @@ namespace ZeroSynth.Authoring
         [SerializeField, Min(0f)] float m_StartingScrap = 400f;
 
         [Header("Spawn ring")]
+        [Tooltip("Width of each arc a wave spawns from, in degrees. Zero spawns from the whole ring.")]
+        [SerializeField, Range(0f, 180f)] float m_FrontArcDegrees = 60f;
         [SerializeField, Min(1f)] float m_SpawnInnerRadius = 45f;
         [SerializeField, Min(1f)] float m_SpawnOuterRadius = 85f;
 
@@ -306,7 +308,8 @@ namespace ZeroSynth.Authoring
                 PrepareDuration = m_PrepareDuration,
                 SpawnRate = m_SpawnRate,
                 SpeedGrowth = m_SpeedGrowth,
-                ScrapPerWave = m_ScrapPerWave
+                ScrapPerWave = m_ScrapPerWave,
+                FrontArc = math.radians(m_FrontArcDegrees)
             });
 
             // Starts in Preparing with the clock already running, so the first

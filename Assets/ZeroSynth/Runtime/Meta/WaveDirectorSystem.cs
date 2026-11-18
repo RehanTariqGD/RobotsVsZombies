@@ -132,6 +132,33 @@ namespace ZeroSynth
             return new int4(runners, spitters, burrowers, titans);
         }
 
+        /// <summary>
+        /// The arcs a wave spawns from. Early waves come from one direction,
+        /// later ones from two and then three, so the player has to commit
+        /// defences to a side and keep some in reserve. Pure function of the
+        /// seed and wave index, so the HUD can announce the next wave's fronts
+        /// during preparation without any state being stored.
+        /// </summary>
+        public static SpawnFronts Fronts(int index, WaveConfig config)
+        {
+            if (config.FrontArc <= 0f)
+                return new SpawnFronts { Count = 1, Angle = float3.zero, Arc = 0f };
+
+            int count = 1;
+            if (index >= 4) count++;
+            if (index >= 10) count++;
+
+            var random = Random.CreateFromIndex(config.Seed * 2654435761u ^ (uint)(index * 104729 + 17));
+            float start = random.NextFloat(0f, math.PI * 2f);
+            float step = math.PI * 2f / count;
+
+            var angles = float3.zero;
+            for (int i = 0; i < count; i++)
+                angles[i] = start + step * i + random.NextFloat(-0.35f, 0.35f);
+
+            return new SpawnFronts { Count = count, Angle = angles, Arc = config.FrontArc };
+        }
+
         void Release(
             ref SystemState state,
             ref WaveState wave,
@@ -172,12 +199,22 @@ namespace ZeroSynth
             var stats = table.Get(kind);
             float speedScale = math.pow(1f + config.SpeedGrowth, math.max(0, wave.Index - 1));
             var em = state.EntityManager;
+            var fronts = Fronts(wave.Index, config);
 
             for (int i = 0; i < take; i++)
             {
                 var entity = dormant[i];
 
-                float angle = random.NextFloat(0f, math.PI * 2f);
+                float angle;
+                if (fronts.Arc <= 0f)
+                {
+                    angle = random.NextFloat(0f, math.PI * 2f);
+                }
+                else
+                {
+                    int front = fronts.Count > 1 ? random.NextInt(0, fronts.Count) : 0;
+                    angle = fronts.Angle[front] + random.NextFloat(-0.5f, 0.5f) * fronts.Arc;
+                }
                 float radius = random.NextFloat(profile.InnerRadius, profile.OuterRadius);
                 float3 position = target.Position + new float3(
                     math.cos(angle) * radius, 0f, math.sin(angle) * radius);

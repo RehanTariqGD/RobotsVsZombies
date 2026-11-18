@@ -31,6 +31,16 @@ namespace ZeroSynth.Flow
         public float CoreHealth;
         public float CoreMaxHealth;
 
+        /// <summary>
+        /// Where the next wave (while preparing) or this one (once underway)
+        /// comes from. <see cref="Fronts"/>.Arc of zero means all round.
+        /// </summary>
+        public SpawnFronts Fronts;
+
+        /// <summary>World position the fronts are measured around, and how far out they spawn.</summary>
+        public Unity.Mathematics.float3 FrontCentre;
+        public float FrontRadius;
+
         public float CoreFraction => CoreMaxHealth > 0f ? CoreHealth / CoreMaxHealth : 0f;
     }
 

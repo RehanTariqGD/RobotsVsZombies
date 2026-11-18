@@ -15,6 +15,7 @@ namespace ZeroSynth.Flow
         EntityQuery m_RunQuery;
         EntityQuery m_CoreQuery;
         EntityQuery m_ActiveQuery;
+        EntityQuery m_TargetQuery;
 
         bool Bind()
         {
@@ -32,6 +33,7 @@ namespace ZeroSynth.Flow
             m_RunQuery = em.CreateEntityQuery(ComponentType.ReadOnly<WaveState>());
             m_CoreQuery = em.CreateEntityQuery(ComponentType.ReadOnly<Core>(), ComponentType.ReadOnly<Health>());
             m_ActiveQuery = em.CreateEntityQuery(ComponentType.ReadOnly<HordeAgent>(), ComponentType.ReadOnly<Active>());
+            m_TargetQuery = em.CreateEntityQuery(ComponentType.ReadOnly<HordeTarget>());
             m_World = world;
             return true;
         }
@@ -55,6 +57,17 @@ namespace ZeroSynth.Flow
             snapshot.ActiveAgents = m_ActiveQuery.CalculateEntityCount();
             snapshot.Biomass = economy.Biomass;
             snapshot.Scrap = economy.MetalScrap;
+
+            if (em.HasComponent<WaveConfig>(run) && em.HasComponent<SpawnProfile>(run))
+            {
+                var config = em.GetComponentData<WaveConfig>(run);
+                int upcoming = wave.Phase == WavePhase.Preparing ? wave.Index + 1 : wave.Index;
+                snapshot.Fronts = WaveDirectorSystem.Fronts(upcoming, config);
+                snapshot.FrontRadius = em.GetComponentData<SpawnProfile>(run).InnerRadius;
+            }
+
+            if (!m_TargetQuery.IsEmpty)
+                snapshot.FrontCentre = m_TargetQuery.GetSingleton<HordeTarget>().Position;
 
             if (!m_CoreQuery.IsEmpty)
             {
