@@ -978,6 +978,11 @@ MonoBehaviour:
   m_MoveSpeed: 7
   m_TurnSpeed: 4
   m_Health: 1200
+  m_ReachRadius: 3
+  m_Armor: 0.35
+  m_RegenPerSecond: 8
+  m_RegenDelay: 5
+  m_RespawnSeconds: 25
   m_Range: 20
   m_FireRate: 8
   m_Damage: 14
@@ -1598,6 +1603,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.PossessionController
   m_Camera: {fileID: 957169295}
   m_GrabRadius: 6
+  m_GunshipGrabRadius: 5
   m_GroundHeight: 0
   m_StickRange: 160
 --- !u!4 &1638251439
@@ -1807,6 +1813,7 @@ MonoBehaviour:
   m_MaxTracers: 48
   m_MaxShotsPerFrame: 40
   m_MaxDeathsPerFrame: 60
+  m_MaxDustPerFrame: 40
 --- !u!1 &1711908132
 GameObject:
   m_ObjectHideFlags: 0
@@ -2126,6 +2133,7 @@ GameObject:
   - component: {fileID: 2040428055}
   - component: {fileID: 2040428057}
   - component: {fileID: 2040428056}
+  - component: {fileID: 2040428058}
   m_Layer: 0
   m_Name: BuildUI
   m_TagString: Untagged
@@ -2183,6 +2191,19 @@ MonoBehaviour:
   m_PivotReferenceSize: 0
   m_Pivot: 0
   m_WorldSpaceCollider: {fileID: 0}
+--- !u!114 &2040428058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2040428054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8550536453918f64cb0a60db7c1eae36, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Game::ZeroSynth.UI.TutorialPrompts
+  m_StepTimeout: 25
 --- !u!1 &2065045768
 GameObject:
   m_ObjectHideFlags: 0
