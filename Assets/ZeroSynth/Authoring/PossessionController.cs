@@ -25,6 +25,9 @@ namespace ZeroSynth.Authoring
         [Tooltip("How close a tap must land to a turret to take it, in world units.")]
         [SerializeField, Min(0.5f)] float m_GrabRadius = 6f;
 
+        [Tooltip("Tap radius for the gunship, measured on the plane it flies in.")]
+        [SerializeField, Min(0.5f)] float m_GunshipGrabRadius = 5f;
+
         [Tooltip("Ground plane height the pointer is projected onto.")]
         [SerializeField] float m_GroundHeight;
 
@@ -39,6 +42,7 @@ namespace ZeroSynth.Authoring
         bool m_Ready;
         bool m_WasPressed;
         bool m_PressMoved;
+        bool m_PressBlocked;
         float m_PressTime;
         Vector2 m_PressOrigin;
 
@@ -62,6 +66,12 @@ namespace ZeroSynth.Authoring
         /// rather than possessing a turret.
         /// </summary>
         public static bool BuildModeActive;
+
+        /// <summary>
+        /// Reports whether a screen point is over UI that should swallow the
+        /// pointer. Set by the Game assembly, which owns the UI documents.
+        /// </summary>
+        public static System.Func<Vector2, bool> PointerBlocker;
 
         /// <summary>What the player is currently driving, for UI hints. Static so UI need not find the instance.</summary>
         public static PossessionMode ActiveMode { get; private set; }
@@ -162,6 +172,10 @@ namespace ZeroSynth.Authoring
                 m_PressOrigin = screen;
                 m_PressTime = Time.unscaledTime;
                 m_PressMoved = false;
+
+                // A press that starts on a button or panel belongs to the UI:
+                // it must not steer, aim or count as a tap on the world.
+                m_PressBlocked = PointerBlocker != null && PointerBlocker(screen);
             }
 
             if (pressed && !m_PressMoved
@@ -172,16 +186,18 @@ namespace ZeroSynth.Authoring
             // has to be: the same gesture starts a drag, and deciding on press
             // made every drag to steer the mech also read as a tap on it, which
             // released it again.
-            if (justReleased && !m_PressMoved && Time.unscaledTime - m_PressTime <= TapMaxSeconds)
+            if (justReleased && !m_PressMoved && !m_PressBlocked
+                && Time.unscaledTime - m_PressTime <= TapMaxSeconds
+                && !(PointerBlocker != null && PointerBlocker(screen)))
             {
                 if (TryGetGroundPoint(screen, out float3 tapGround))
-                    HandleTap(tapGround);
+                    HandleTap(screen, tapGround);
             }
 
             if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame && Possessed != Entity.Null)
                 Release();
 
-            if (Mode == PossessionMode.Turret && pressed)
+            if (Mode == PossessionMode.Turret && pressed && !m_PressBlocked)
             {
                 // Aim only tracks while held; a touchscreen has no hover.
                 if (TryGetGroundPoint(screen, out float3 aimGround))
@@ -192,7 +208,7 @@ namespace ZeroSynth.Authoring
                 // A drag from the press point acts as a virtual stick, in screen
                 // space so it stays consistent while the follow camera moves
                 // under it. Keys take over when held, for testing in the editor.
-                float2 stick = pressed && m_PressMoved
+                float2 stick = pressed && m_PressMoved && !m_PressBlocked
                     ? (float2)((screen - m_PressOrigin) / m_StickRange)
                     : float2.zero;
 
@@ -248,14 +264,23 @@ namespace ZeroSynth.Authoring
             return new float2(x, y);
         }
 
-        void HandleTap(float3 ground)
+        void HandleTap(Vector2 screen, float3 ground)
         {
-            var ship = FindNear(m_GunshipQuery, ground, m_GrabRadius);
+            // The gunship is hit-tested where it actually is. Projecting a tap
+            // on its image down to the ground lands well beyond it, because it
+            // flies high. If it cannot launch the tap falls through, so a
+            // turret under the same finger is still reachable.
+            var ship = FindGunshipAt(screen);
             if (ship != Entity.Null)
             {
-                if (ship == Possessed) Release();
-                else TryPossessGunship(ship);
-                return;
+                if (ship == Possessed)
+                {
+                    Release();
+                    return;
+                }
+
+                if (TryPossessGunship(ship))
+                    return;
             }
 
             var mech = FindNear(m_MechQuery, ground, m_GrabRadius);
@@ -274,18 +299,47 @@ namespace ZeroSynth.Authoring
             else Possess(turret, PossessionMode.Turret);
         }
 
-        void TryPossessGunship(Entity ship)
+        bool TryPossessGunship(Entity ship)
         {
-            if (!m_EntityManager.Exists(ship)) return;
+            if (!m_EntityManager.Exists(ship)) return false;
 
             var data = m_EntityManager.GetComponentData<GunshipUnit>(ship);
             if (data.Fuel < data.MinLaunchFuel)
             {
                 Debug.Log("[ZeroSynth] Gunship is refuelling. It needs more fuel to launch.");
-                return;
+                return false;
             }
 
             Possess(ship, PossessionMode.Gunship);
+            return true;
+        }
+
+        Entity FindGunshipAt(Vector2 screen)
+        {
+            var entities = m_GunshipQuery.ToEntityArray(Allocator.Temp);
+            var transforms = m_GunshipQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+
+            Entity best = Entity.Null;
+            float bestSq = m_GunshipGrabRadius * m_GunshipGrabRadius;
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (!TryGetPlanePoint(screen, transforms[i].Position.y, out float3 hit))
+                    continue;
+
+                float3 delta = hit - transforms[i].Position;
+                delta.y = 0f;
+                float d = math.lengthsq(delta);
+                if (d <= bestSq)
+                {
+                    bestSq = d;
+                    best = entities[i];
+                }
+            }
+
+            entities.Dispose();
+            transforms.Dispose();
+            return best;
         }
 
         void Possess(Entity entity, PossessionMode mode)
@@ -391,18 +445,23 @@ namespace ZeroSynth.Authoring
         /// </summary>
         bool TryGetGroundPoint(Vector2 screenPosition, out float3 result)
         {
+            return TryGetPlanePoint(screenPosition, m_GroundHeight, out result);
+        }
+
+        bool TryGetPlanePoint(Vector2 screenPosition, float height, out float3 result)
+        {
             result = float3.zero;
 
             var ray = m_Camera.ScreenPointToRay(screenPosition);
             if (Mathf.Abs(ray.direction.y) < 1e-5f)
                 return false;
 
-            float t = (m_GroundHeight - ray.origin.y) / ray.direction.y;
+            float t = (height - ray.origin.y) / ray.direction.y;
             if (t < 0f)
                 return false;
 
             Vector3 hit = ray.origin + ray.direction * t;
-            result = new float3(hit.x, m_GroundHeight, hit.z);
+            result = new float3(hit.x, height, hit.z);
             return true;
         }
 

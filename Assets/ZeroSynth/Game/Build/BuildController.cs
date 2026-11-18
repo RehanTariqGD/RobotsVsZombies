@@ -113,6 +113,9 @@ namespace ZeroSynth.Build
         {
             Instance = this;
 
+            // Possession taps must not land on the UI either.
+            PossessionController.PointerBlocker = IsOverBlockingUi;
+
             foreach (var def in m_Definitions)
                 m_Options.Add(new BuildOption(def.Kind, def.Label, StructureCosts.Scrap(def.Kind)));
 
@@ -131,7 +134,11 @@ namespace ZeroSynth.Build
         void OnDestroy()
         {
             Release();
-            if (Instance == this) Instance = null;
+            if (Instance == this)
+            {
+                Instance = null;
+                PossessionController.PointerBlocker = null;
+            }
         }
 
         /// <summary>True if the player has enough scrap for this kind.</summary>
