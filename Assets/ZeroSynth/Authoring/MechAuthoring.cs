@@ -32,6 +32,19 @@ namespace ZeroSynth.Authoring
 
         [SerializeField, Min(1f)] float m_Health = 1200f;
 
+        [Header("Survival")]
+        [Tooltip("Metres from the mech within which swarm agents hurt it.")]
+        [SerializeField, Min(0.5f)] float m_ReachRadius = 3f;
+
+        [Tooltip("Fraction of incoming melee damage that gets through.")]
+        [SerializeField, Range(0.05f, 1f)] float m_Armor = 0.35f;
+
+        [SerializeField, Min(0f)] float m_RegenPerSecond = 8f;
+        [SerializeField, Min(0f)] float m_RegenDelay = 5f;
+
+        [Tooltip("Seconds a wrecked mech takes to be rebuilt at its start position.")]
+        [SerializeField, Min(1f)] float m_RespawnSeconds = 25f;
+
         [Header("Weapon")]
         [SerializeField, Min(1f)] float m_Range = 20f;
         [SerializeField, Min(0.1f)] float m_FireRate = 8f;
@@ -59,6 +72,16 @@ namespace ZeroSynth.Authoring
             {
                 MoveSpeed = m_MoveSpeed,
                 TurnSpeed = m_TurnSpeed
+            });
+
+            m_EntityManager.AddComponentData(m_Entity, new MechVitals
+            {
+                Home = transform.position,
+                ReachRadius = m_ReachRadius,
+                Armor = m_Armor,
+                RegenPerSecond = m_RegenPerSecond,
+                RegenDelay = m_RegenDelay,
+                RespawnSeconds = m_RespawnSeconds
             });
 
             m_EntityManager.AddComponentData(m_Entity, new Structure

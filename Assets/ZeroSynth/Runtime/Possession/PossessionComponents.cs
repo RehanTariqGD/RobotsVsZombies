@@ -68,6 +68,38 @@ namespace ZeroSynth
     }
 
     /// <summary>
+    /// What can happen to the mech. Agents that stand next to it chew on its
+    /// hull; at zero it is wrecked, hidden, and rebuilt at <see cref="Home"/>
+    /// after <see cref="RespawnSeconds"/>.
+    /// </summary>
+    /// <remarks>
+    /// Damage is taken directly by <c>MechVitalsSystem</c> from the agents
+    /// around it rather than through the damage queue, the way the core takes
+    /// it. <see cref="Armor"/> scales that damage down: the Goliath is a
+    /// plug, not a glass cannon, and raw swarm damage would melt it.
+    /// </remarks>
+    public struct MechVitals : IComponentData
+    {
+        public float3 Home;
+
+        /// <summary>Metres from the mech within which agents hurt it.</summary>
+        public float ReachRadius;
+
+        /// <summary>Fraction of incoming melee damage that gets through.</summary>
+        public float Armor;
+
+        public float RegenPerSecond;
+
+        /// <summary>Seconds without damage before the hull starts to mend.</summary>
+        public float RegenDelay;
+        public float QuietTimer;
+
+        public float RespawnSeconds;
+        public float RespawnTimer;
+        public bool Dead;
+    }
+
+    /// <summary>
     /// A flyer the player can take over for a limited sortie. Its guns are the
     /// ordinary turret components, enabled only while it is flown: parked, it
     /// is scenery.

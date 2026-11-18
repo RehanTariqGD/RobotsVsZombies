@@ -38,6 +38,7 @@ namespace ZeroSynth.Authoring
         EntityQuery m_TurretQuery;
         EntityQuery m_MechQuery;
         EntityQuery m_GunshipQuery;
+        EntityQuery m_MechVitalsQuery;
         Entity m_StateEntity;
         bool m_Ready;
         bool m_WasPressed;
@@ -79,6 +80,12 @@ namespace ZeroSynth.Authoring
         /// <summary>Gunship fuel as 0..1, or a negative value when the scene has no gunship.</summary>
         public static float GunshipFuel01 { get; private set; } = -1f;
 
+        /// <summary>Mech hull as 0..1, or negative when the scene has no mech.</summary>
+        public static float MechHull01 { get; private set; } = -1f;
+
+        /// <summary>Whole seconds until a wrecked mech is rebuilt; zero while it is alive.</summary>
+        public static int MechRespawnSeconds { get; private set; }
+
         public Entity Possessed { get; private set; }
         public PossessionMode Mode { get; private set; }
 
@@ -117,6 +124,19 @@ namespace ZeroSynth.Authoring
                 {
                     ComponentType.ReadOnly<MechUnit>(),
                     ComponentType.ReadOnly<LocalTransform>()
+                },
+
+                // A wrecked mech is hidden, and must not be tappable.
+                None = new[] { ComponentType.ReadOnly<Unity.Rendering.DisableRendering>() },
+                Options = EntityQueryOptions.IgnoreComponentEnabledState
+            });
+
+            m_MechVitalsQuery = m_EntityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<MechVitals>(),
+                    ComponentType.ReadOnly<Health>()
                 },
                 Options = EntityQueryOptions.IgnoreComponentEnabledState
             });
@@ -249,6 +269,20 @@ namespace ZeroSynth.Authoring
             else
             {
                 GunshipFuel01 = -1f;
+            }
+
+            if (m_MechVitalsQuery.CalculateEntityCount() == 1)
+            {
+                var mechEntity = m_MechVitalsQuery.GetSingletonEntity();
+                var vitals = m_EntityManager.GetComponentData<MechVitals>(mechEntity);
+                var health = m_EntityManager.GetComponentData<Health>(mechEntity);
+                MechHull01 = health.Max > 0f ? Mathf.Clamp01(health.Current / health.Max) : 0f;
+                MechRespawnSeconds = vitals.Dead ? Mathf.CeilToInt(Mathf.Max(0f, vitals.RespawnTimer)) : 0;
+            }
+            else
+            {
+                MechHull01 = -1f;
+                MechRespawnSeconds = 0;
             }
         }
 
@@ -471,7 +505,10 @@ namespace ZeroSynth.Authoring
             m_TurretQuery.Dispose();
             m_MechQuery.Dispose();
             m_GunshipQuery.Dispose();
+            m_MechVitalsQuery.Dispose();
             GunshipFuel01 = -1f;
+            MechHull01 = -1f;
+            MechRespawnSeconds = 0;
         }
 
         void OnDrawGizmos()

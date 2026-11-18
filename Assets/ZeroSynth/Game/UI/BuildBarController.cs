@@ -117,36 +117,55 @@ namespace ZeroSynth.UI
             "DRIVING MECH\nDRAG OR WASD: MOVE  |  TAP IT AGAIN OR SPACE: RELEASE",
             "BUILDING\nTAP THE GROUND TO PLACE  |  R OR ROTATE TURNS IT  |  CANCEL WHEN DONE",
             "REPAIR\nTAP A DAMAGED STRUCTURE  |  COSTS SCRAP PER MISSING HEALTH",
-            "SELL\nTAP A STRUCTURE FOR HALF ITS COST BACK"
+            "SELL\nTAP A STRUCTURE FOR HALF ITS COST BACK",
+            "FLYING GUNSHIP\nDRAG OR WASD: FLY  |  TAP IT AGAIN OR SPACE: RETURN TO PAD"
         };
 
         void RefreshHint()
         {
-            // Keys below 1000 index s_Hints. The gunship states fold the fuel
-            // percentage into the key, so the label is rebuilt only when the
-            // number actually changes rather than allocating every frame.
-            float fuel = PossessionController.GunshipFuel01;
-            int pct = fuel < 0f ? -1 : Mathf.RoundToInt(fuel * 100f);
-
             int key;
             if (m_BuildHintKey != 0) key = m_BuildHintKey;
             else if (PossessionController.ActiveMode == PossessionMode.Turret) key = 1;
             else if (PossessionController.ActiveMode == PossessionMode.Mech) key = 2;
-            else if (PossessionController.ActiveMode == PossessionMode.Gunship) key = 1000 + Mathf.Max(0, pct);
-            else if (pct >= 0) key = 2000 + pct;
+            else if (PossessionController.ActiveMode == PossessionMode.Gunship) key = 6;
             else key = 0;
 
-            if (key == m_HintKey) return;
-            m_HintKey = key;
+            // Fuel, hull and the respawn countdown go on a third line while the
+            // player is not building. They are folded into one number so the
+            // label is rebuilt only when something on it actually changes,
+            // rather than allocating a string every frame.
+            int fuelPct = -1, hullPct = -1, respawn = 0;
+            if (key < 3 || key == 6)
+            {
+                float fuel = PossessionController.GunshipFuel01;
+                float hull = PossessionController.MechHull01;
+                fuelPct = fuel < 0f ? -1 : Mathf.RoundToInt(fuel * 100f);
+                hullPct = hull < 0f ? -1 : Mathf.RoundToInt(hull * 100f);
+                respawn = Mathf.Clamp(PossessionController.MechRespawnSeconds, 0, 99);
+            }
 
-            if (key >= 2000)
-                m_Hint.text = "TAP A TURRET, THE MECH OR THE GUNSHIP TO TAKE CONTROL\nESC: PAUSE MENU  |  GUNSHIP FUEL "
-                              + pct.ToString(CultureInfo.InvariantCulture) + "%";
-            else if (key >= 1000)
-                m_Hint.text = "FLYING GUNSHIP  |  FUEL " + (key - 1000).ToString(CultureInfo.InvariantCulture)
-                              + "%\nDRAG OR WASD: FLY  |  TAP IT AGAIN OR SPACE: RETURN TO PAD";
-            else
-                m_Hint.text = s_Hints[key];
+            int status = (fuelPct + 1) + 102 * (hullPct + 1) + 102 * 102 * respawn;
+            int signature = key + 8 * status;
+            if (signature == m_HintKey) return;
+            m_HintKey = signature;
+
+            string text = s_Hints[key];
+            if (key == 0 && (fuelPct >= 0 || hullPct >= 0))
+                text = "TAP A TURRET, THE MECH OR THE GUNSHIP TO TAKE CONTROL\nESC: PAUSE MENU";
+
+            if (fuelPct >= 0 || hullPct >= 0)
+            {
+                string line = "";
+                if (hullPct >= 0)
+                    line = respawn > 0
+                        ? "MECH DOWN - REBUILT IN " + respawn.ToString(CultureInfo.InvariantCulture) + "S"
+                        : "MECH HULL " + hullPct.ToString(CultureInfo.InvariantCulture) + "%";
+                if (fuelPct >= 0)
+                    line += (line.Length > 0 ? "  |  " : "") + "GUNSHIP FUEL " + fuelPct.ToString(CultureInfo.InvariantCulture) + "%";
+                text += "\n" + line;
+            }
+
+            m_Hint.text = text;
         }
 
         void Update()
