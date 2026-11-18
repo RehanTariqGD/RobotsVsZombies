@@ -122,15 +122,31 @@ namespace ZeroSynth.UI
 
         void RefreshHint()
         {
+            // Keys below 1000 index s_Hints. The gunship states fold the fuel
+            // percentage into the key, so the label is rebuilt only when the
+            // number actually changes rather than allocating every frame.
+            float fuel = PossessionController.GunshipFuel01;
+            int pct = fuel < 0f ? -1 : Mathf.RoundToInt(fuel * 100f);
+
             int key;
             if (m_BuildHintKey != 0) key = m_BuildHintKey;
             else if (PossessionController.ActiveMode == PossessionMode.Turret) key = 1;
             else if (PossessionController.ActiveMode == PossessionMode.Mech) key = 2;
+            else if (PossessionController.ActiveMode == PossessionMode.Gunship) key = 1000 + Mathf.Max(0, pct);
+            else if (pct >= 0) key = 2000 + pct;
             else key = 0;
 
             if (key == m_HintKey) return;
             m_HintKey = key;
-            m_Hint.text = s_Hints[key];
+
+            if (key >= 2000)
+                m_Hint.text = "TAP A TURRET, THE MECH OR THE GUNSHIP TO TAKE CONTROL\nESC: PAUSE MENU  |  GUNSHIP FUEL "
+                              + pct.ToString(CultureInfo.InvariantCulture) + "%";
+            else if (key >= 1000)
+                m_Hint.text = "FLYING GUNSHIP  |  FUEL " + (key - 1000).ToString(CultureInfo.InvariantCulture)
+                              + "%\nDRAG OR WASD: FLY  |  TAP IT AGAIN OR SPACE: RETURN TO PAD";
+            else
+                m_Hint.text = s_Hints[key];
         }
 
         void Update()

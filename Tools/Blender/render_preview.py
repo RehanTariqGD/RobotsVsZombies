@@ -1,4 +1,4 @@
-"""Flat-shaded preview renders of an FBX, from three angles.
+"""Flat-shaded preview renders of an FBX, including top and gameplay angles.
 
     blender.exe -b -P Tools/Blender/render_preview.py -- <fbx> <out_prefix> [palette.png]
 
@@ -70,6 +70,8 @@ views = {  # name: (azimuth degrees, elevation degrees)
     "side": (90, 8),
     "three_quarter": (140, 22),
     "back": (0, 8),
+    "top": (180, 90),
+    "isometric": (140, 50),
 }
 for name, (az, el) in views.items():
     a, e = math.radians(az), math.radians(el)

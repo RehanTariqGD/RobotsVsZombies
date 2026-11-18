@@ -21,9 +21,9 @@ copy is a duplicate and removes itself.
 
 | | Touch | Editor |
 |---|---|---|
-| Take control of a turret or the mech | tap it | click it |
+| Take control of a turret, the mech or the gunship | tap it | click it |
 | Aim a possessed turret | hold and drag | hold and drag |
-| Drive the possessed mech | drag anywhere | WASD / arrows |
+| Drive the mech or fly the gunship (20 s of fuel, refills on its pad) | drag anywhere | WASD / arrows |
 | Release | tap it again | tap it again, or Space |
 | Build | pick a structure on the bar, tap the ground | same |
 | Pause menu | pause button, top right | Esc |

@@ -1217,6 +1217,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 950283481}
+  - {fileID: 1290330778}
   m_Father: {fileID: 1779635875}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1202652864
@@ -1338,6 +1339,65 @@ Transform:
   m_Children: []
   m_Father: {fileID: 633673035}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1290330777
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1290330778}
+  - component: {fileID: 1290330779}
+  m_Layer: 0
+  m_Name: Gunship
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1290330778
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1290330777}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -8, y: 0, z: 8}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1092136514}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1290330779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1290330777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 165bcad8ebfdc3f40ae86f1654c5a7ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: ZeroSynth.Authoring::ZeroSynth.Authoring.GunshipAuthoring
+  m_Mesh: {fileID: 7926225987919984308, guid: 1355dea1498017e4fad33e82864925d4, type: 3}
+  m_Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+  m_MoveSpeed: 16
+  m_TurnSpeed: 3
+  m_FlightHeight: 14
+  m_ParkedHeight: 1.5
+  m_MaxRange: 70
+  m_MaxFuel: 20
+  m_BurnPerSecond: 1
+  m_RefillPerSecond: 1.5
+  m_MinLaunchFuel: 6
+  m_Range: 24
+  m_FireRate: 10
+  m_Damage: 12
+  m_SplashRadius: 2.5
 --- !u!1 &1302892783
 GameObject:
   m_ObjectHideFlags: 0
@@ -1573,6 +1633,8 @@ MonoBehaviour:
     ShadowDistance: 50
     LodBias: 1
   m_MechOffset: {x: 0, y: 18, z: -22}
+  m_GunshipOffset: {x: 0, y: 38, z: -26}
+  m_GunshipPitch: 55
   m_MechPitch: 35
   m_FollowLerp: 6
   m_IdleSeconds: 1.2

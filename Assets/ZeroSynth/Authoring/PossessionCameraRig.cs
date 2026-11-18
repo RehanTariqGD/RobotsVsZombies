@@ -49,6 +49,12 @@ namespace ZeroSynth.Authoring
         [Tooltip("Offset from the mech, in world space. Lower and closer than tactical.")]
         [SerializeField] Vector3 m_MechOffset = new Vector3(0f, 18f, -22f);
 
+        [Header("Gunship follow")]
+        [Tooltip("Offset from the point on the ground under the gunship.")]
+        [SerializeField] Vector3 m_GunshipOffset = new Vector3(0f, 38f, -26f);
+
+        [SerializeField, Min(0.5f)] float m_GunshipPitch = 55f;
+
         [SerializeField, Min(0.5f)] float m_MechPitch = 35f;
         [SerializeField, Min(0.1f)] float m_FollowLerp = 6f;
 
@@ -110,21 +116,30 @@ namespace ZeroSynth.Authoring
             if (mech && math.lengthsq(state.MoveInput) > 0.0025f)
                 m_LastDriveTime = Time.unscaledTime;
 
-            bool driving = mech && Time.unscaledTime - m_LastDriveTime < m_IdleSeconds;
+            // The gunship is followed for the whole sortie: it burns fuel while
+            // hovering too, and it can fly well off the tactical view. It keeps
+            // the tactical quality profile, since the camera stays high.
+            bool ship = state.Mode == PossessionMode.Gunship
+                        && state.Current != Entity.Null
+                        && m_EntityManager.Exists(state.Current)
+                        && m_EntityManager.HasComponent<LocalTransform>(state.Current);
 
-            var wanted = driving ? PossessionMode.Mech : PossessionMode.None;
+            bool driving = (mech && Time.unscaledTime - m_LastDriveTime < m_IdleSeconds) || ship;
+
+            var wanted = driving && !ship ? PossessionMode.Mech : PossessionMode.None;
             if (wanted != m_AppliedMode)
             {
-                Apply(driving ? m_MechProfile : m_TacticalProfile);
+                Apply(wanted == PossessionMode.Mech ? m_MechProfile : m_TacticalProfile);
                 m_AppliedMode = wanted;
             }
 
             if (driving)
             {
                 float3 pivot = m_EntityManager.GetComponentData<LocalTransform>(state.Current).Position;
+                if (ship) pivot.y = 0f;
 
-                Vector3 target = (Vector3)pivot + m_MechOffset;
-                var rotation = Quaternion.Euler(m_MechPitch, 0f, 0f);
+                Vector3 target = (Vector3)pivot + (ship ? m_GunshipOffset : m_MechOffset);
+                var rotation = Quaternion.Euler(ship ? m_GunshipPitch : m_MechPitch, 0f, 0f);
 
                 float t = 1f - Mathf.Exp(-m_FollowLerp * Time.deltaTime);
                 m_Camera.transform.position = Vector3.Lerp(m_Camera.transform.position, target, t);

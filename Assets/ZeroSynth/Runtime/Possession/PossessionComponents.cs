@@ -12,6 +12,9 @@ namespace ZeroSynth
 
         /// <summary>Goliath mech. Drag drives it; the camera follows and the quality profile changes.</summary>
         Mech = 2,
+
+        /// <summary>HK gunship. Drag flies it over the horde; it runs on fuel and returns to its pad.</summary>
+        Gunship = 3,
     }
 
     /// <summary>
@@ -62,5 +65,42 @@ namespace ZeroSynth
 
         /// <summary>Radians per second.</summary>
         public float TurnSpeed;
+    }
+
+    /// <summary>
+    /// A flyer the player can take over for a limited sortie. Its guns are the
+    /// ordinary turret components, enabled only while it is flown: parked, it
+    /// is scenery.
+    /// </summary>
+    /// <remarks>
+    /// It has no <c>Structure</c> and no <c>Health</c>, so nothing in the
+    /// swarm can target it and it cannot block building. The cost of using it
+    /// is fuel: it burns while flown, refills only on the pad, and flies itself
+    /// home when released or empty.
+    /// </remarks>
+    public struct GunshipUnit : IComponentData
+    {
+        public float MoveSpeed;
+
+        /// <summary>Radians per second.</summary>
+        public float TurnSpeed;
+
+        /// <summary>Home position on the ground plane (y is ignored).</summary>
+        public float3 Pad;
+
+        /// <summary>Height flown at, and height sat at when parked.</summary>
+        public float FlightHeight;
+        public float ParkedHeight;
+
+        /// <summary>Furthest it may fly from the pad.</summary>
+        public float MaxRange;
+
+        public float Fuel;
+        public float MaxFuel;
+        public float BurnPerSecond;
+        public float RefillPerSecond;
+
+        /// <summary>Fuel needed to take off at all, so it cannot be flown in tiny hops.</summary>
+        public float MinLaunchFuel;
     }
 }

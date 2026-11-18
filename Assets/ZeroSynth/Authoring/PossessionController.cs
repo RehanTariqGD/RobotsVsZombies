@@ -34,6 +34,7 @@ namespace ZeroSynth.Authoring
         EntityManager m_EntityManager;
         EntityQuery m_TurretQuery;
         EntityQuery m_MechQuery;
+        EntityQuery m_GunshipQuery;
         Entity m_StateEntity;
         bool m_Ready;
         bool m_WasPressed;
@@ -64,6 +65,9 @@ namespace ZeroSynth.Authoring
 
         /// <summary>What the player is currently driving, for UI hints. Static so UI need not find the instance.</summary>
         public static PossessionMode ActiveMode { get; private set; }
+
+        /// <summary>Gunship fuel as 0..1, or a negative value when the scene has no gunship.</summary>
+        public static float GunshipFuel01 { get; private set; } = -1f;
 
         public Entity Possessed { get; private set; }
         public PossessionMode Mode { get; private set; }
@@ -107,6 +111,19 @@ namespace ZeroSynth.Authoring
                 Options = EntityQueryOptions.IgnoreComponentEnabledState
             });
 
+            m_GunshipQuery = m_EntityManager.CreateEntityQuery(new EntityQueryDesc
+            {
+                All = new[]
+                {
+                    ComponentType.ReadOnly<GunshipUnit>(),
+                    ComponentType.ReadOnly<LocalTransform>()
+                },
+                Options = EntityQueryOptions.IgnoreComponentEnabledState
+            });
+
+            GunshipFuel01 = -1f;
+            ActiveMode = PossessionMode.None;
+
             m_StateEntity = m_EntityManager.CreateEntity();
             m_EntityManager.SetName(m_StateEntity, "PossessionState");
             m_EntityManager.AddComponentData(m_StateEntity, new PossessionState
@@ -125,7 +142,11 @@ namespace ZeroSynth.Authoring
 
         void Update()
         {
-            if (!m_Ready || !InputEnabled || BuildModeActive) return;
+            if (!m_Ready) return;
+
+            SyncWithSimulation();
+
+            if (!InputEnabled || BuildModeActive) return;
 
             var pointer = Pointer.current;
             var keyboard = Keyboard.current;
@@ -166,7 +187,7 @@ namespace ZeroSynth.Authoring
                 if (TryGetGroundPoint(screen, out float3 aimGround))
                     SetAim(aimGround);
             }
-            else if (Mode == PossessionMode.Mech)
+            else if (Mode == PossessionMode.Mech || Mode == PossessionMode.Gunship)
             {
                 // A drag from the press point acts as a virtual stick, in screen
                 // space so it stays consistent while the follow camera moves
@@ -186,6 +207,35 @@ namespace ZeroSynth.Authoring
             }
         }
 
+        /// <summary>
+        /// Lets the simulation end a possession (the gunship running dry) and
+        /// publishes the gunship's fuel for the HUD.
+        /// </summary>
+        void SyncWithSimulation()
+        {
+            if (Possessed != Entity.Null)
+            {
+                bool gone = !m_EntityManager.Exists(Possessed);
+                if (!gone)
+                {
+                    var state = m_EntityManager.GetComponentData<PossessionState>(m_StateEntity);
+                    gone = state.Current != Possessed;
+                }
+
+                if (gone) Release();
+            }
+
+            if (m_GunshipQuery.CalculateEntityCount() == 1)
+            {
+                var ship = m_GunshipQuery.GetSingleton<GunshipUnit>();
+                GunshipFuel01 = ship.MaxFuel > 0f ? Mathf.Clamp01(ship.Fuel / ship.MaxFuel) : 0f;
+            }
+            else
+            {
+                GunshipFuel01 = -1f;
+            }
+        }
+
         static float2 ReadMoveKeys(Keyboard keyboard)
         {
             if (keyboard == null) return float2.zero;
@@ -200,6 +250,14 @@ namespace ZeroSynth.Authoring
 
         void HandleTap(float3 ground)
         {
+            var ship = FindNear(m_GunshipQuery, ground, m_GrabRadius);
+            if (ship != Entity.Null)
+            {
+                if (ship == Possessed) Release();
+                else TryPossessGunship(ship);
+                return;
+            }
+
             var mech = FindNear(m_MechQuery, ground, m_GrabRadius);
             if (mech != Entity.Null)
             {
@@ -214,6 +272,20 @@ namespace ZeroSynth.Authoring
 
             if (turret == Possessed) Release();
             else Possess(turret, PossessionMode.Turret);
+        }
+
+        void TryPossessGunship(Entity ship)
+        {
+            if (!m_EntityManager.Exists(ship)) return;
+
+            var data = m_EntityManager.GetComponentData<GunshipUnit>(ship);
+            if (data.Fuel < data.MinLaunchFuel)
+            {
+                Debug.Log("[ZeroSynth] Gunship is refuelling. It needs more fuel to launch.");
+                return;
+            }
+
+            Possess(ship, PossessionMode.Gunship);
         }
 
         void Possess(Entity entity, PossessionMode mode)
@@ -245,7 +317,9 @@ namespace ZeroSynth.Authoring
 
             Debug.Log(mode == PossessionMode.Mech
                 ? "[ZeroSynth] Possessed mech. Drag to drive, tap it again to release."
-                : "[ZeroSynth] Possessed turret. Drag to aim, tap it again to release.");
+                : mode == PossessionMode.Gunship
+                    ? "[ZeroSynth] Flying gunship. Drag to fly, tap it again to return to the pad."
+                    : "[ZeroSynth] Possessed turret. Drag to aim, tap it again to release.");
         }
 
         public void Release()
@@ -337,6 +411,8 @@ namespace ZeroSynth.Authoring
             if (!m_Ready) return;
             m_TurretQuery.Dispose();
             m_MechQuery.Dispose();
+            m_GunshipQuery.Dispose();
+            GunshipFuel01 = -1f;
         }
 
         void OnDrawGizmos()
