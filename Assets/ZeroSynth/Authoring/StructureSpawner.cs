@@ -32,7 +32,7 @@ namespace ZeroSynth.Authoring
             centre.y = def.YOffset;
 
             em.AddComponentData(entity, LocalTransform.FromPosition(centre));
-            em.AddComponentData(entity, new Structure { Kind = def.Kind, Footprint = footprint });
+            em.AddComponentData(entity, new Structure { Kind = def.Kind, Footprint = footprint, Cost = def.ScrapCost });
             em.AddComponentData(entity, new GridAnchor { Cell = anchor });
             em.AddComponentData(entity, new Health { Current = def.Health, Max = def.Health });
 

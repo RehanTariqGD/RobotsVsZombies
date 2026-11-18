@@ -27,6 +27,9 @@ namespace ZeroSynth
 
         /// <summary>Size in cells. (1,1) for most things.</summary>
         public int2 Footprint;
+
+        /// <summary>Scrap it cost to build, for the sell refund. Zero means use the default for its kind.</summary>
+        public float Cost;
     }
 
     /// <summary>

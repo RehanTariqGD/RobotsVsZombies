@@ -1696,6 +1696,7 @@ MonoBehaviour:
   m_Definitions:
   - Label: Wall
     Kind: 0
+    Cost: 0
     Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     Material: {fileID: 2100000, guid: df4b8cd157b9abb44a7711d5026b4286, type: 2}
     Footprint: {x: 3, y: 1}
@@ -1712,6 +1713,7 @@ MonoBehaviour:
     ScrapPerBiomass: 1.5
   - Label: Turret
     Kind: 1
+    Cost: 0
     Mesh: {fileID: 4945944309118658882, guid: ee242f49a3cb6934f82bafd67799e296, type: 3}
     Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
     Footprint: {x: 2, y: 2}
@@ -1726,8 +1728,60 @@ MonoBehaviour:
     SupplyRange: 0
     BiomassPerSecond: 10
     ScrapPerBiomass: 1.5
+  - Label: Gatling
+    Kind: 1
+    Cost: 100
+    Mesh: {fileID: -7753871441670360723, guid: 24b593aeb4c5ec6469411d08efed8ac0, type: 3}
+    Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+    Footprint: {x: 2, y: 2}
+    VisualScale: {x: 1.2, y: 1.2, z: 1.2}
+    StretchToFootprint: 0
+    YOffset: 0
+    Health: 300
+    Range: 20
+    FireRate: 9
+    Damage: 6
+    SplashRadius: 0
+    SupplyRange: 30
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
+  - Label: Mortar
+    Kind: 1
+    Cost: 180
+    Mesh: {fileID: -6781171927046117796, guid: 125d7a6c7cabaac48abcc0a9459e72ac, type: 3}
+    Material: {fileID: 2100000, guid: 9abb0098e44c2ae458ad04698472310c, type: 2}
+    Footprint: {x: 2, y: 2}
+    VisualScale: {x: 1.05, y: 1.05, z: 1.05}
+    StretchToFootprint: 0
+    YOffset: 0
+    Health: 350
+    Range: 36
+    FireRate: 0.8
+    Damage: 40
+    SplashRadius: 5
+    SupplyRange: 30
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
+  - Label: Reactor
+    Kind: 2
+    Cost: 0
+    Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+    Material: {fileID: 2100000, guid: ca42ea38441246b4b8ee2a13ce12c573, type: 2}
+    Footprint: {x: 2, y: 2}
+    VisualScale: {x: 2.4, y: 2.2, z: 2.4}
+    StretchToFootprint: 0
+    YOffset: 1.1
+    Health: 350
+    Range: 28
+    FireRate: 4
+    Damage: 10
+    SplashRadius: 0
+    SupplyRange: 45
+    BiomassPerSecond: 10
+    ScrapPerBiomass: 1.5
   - Label: Pylon
     Kind: 4
+    Cost: 0
     Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     Material: {fileID: 2100000, guid: ca42ea38441246b4b8ee2a13ce12c573, type: 2}
     Footprint: {x: 2, y: 2}
@@ -1744,6 +1798,7 @@ MonoBehaviour:
     ScrapPerBiomass: 1.5
   - Label: Foundry
     Kind: 3
+    Cost: 0
     Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     Material: {fileID: 2100000, guid: ca42ea38441246b4b8ee2a13ce12c573, type: 2}
     Footprint: {x: 3, y: 2}

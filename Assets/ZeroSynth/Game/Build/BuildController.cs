@@ -14,12 +14,15 @@ namespace ZeroSynth.Build
     /// <summary>One entry in the build bar.</summary>
     public readonly struct BuildOption
     {
+        /// <summary>Position in the definition list. Several options can share a kind.</summary>
+        public readonly int Index;
         public readonly StructureKind Kind;
         public readonly string Label;
         public readonly float Cost;
 
-        public BuildOption(StructureKind kind, string label, float cost)
+        public BuildOption(int index, StructureKind kind, string label, float cost)
         {
+            Index = index;
             Kind = kind;
             Label = label;
             Cost = cost;
@@ -97,6 +100,9 @@ namespace ZeroSynth.Build
         /// <summary>The structure being placed. Meaningful only in <see cref="BuildMode.Place"/>.</summary>
         public StructureKind Selected { get; private set; }
 
+        /// <summary>Index into <see cref="Options"/> of the structure being placed, or -1.</summary>
+        public int SelectedIndex { get; private set; } = -1;
+
         /// <summary>The placement is turned a quarter turn, swapping its footprint's axes.</summary>
         public bool Rotated { get; private set; }
 
@@ -116,8 +122,11 @@ namespace ZeroSynth.Build
             // Possession taps must not land on the UI either.
             PossessionController.PointerBlocker = IsOverBlockingUi;
 
-            foreach (var def in m_Definitions)
-                m_Options.Add(new BuildOption(def.Kind, def.Label, StructureCosts.Scrap(def.Kind)));
+            for (int i = 0; i < m_Definitions.Length; i++)
+            {
+                var def = m_Definitions[i];
+                m_Options.Add(new BuildOption(i, def.Kind, def.Label, def.ScrapCost));
+            }
 
             var go = new GameObject("BuildOutline");
             go.transform.SetParent(transform, false);
@@ -144,16 +153,29 @@ namespace ZeroSynth.Build
         /// <summary>True if the player has enough scrap for this kind.</summary>
         public bool CanAfford(StructureKind kind)
         {
-            return Bind() && ReadScrap() >= StructureCosts.Scrap(kind);
+            var def = Find(kind);
+            return def != null && Bind() && ReadScrap() >= def.ScrapCost;
         }
 
+        /// <summary>Selects the first option of this kind.</summary>
         public void Select(StructureKind kind)
         {
-            var def = Find(kind);
-            if (def == null) return;
+            for (int i = 0; i < m_Definitions.Length; i++)
+            {
+                if (m_Definitions[i].Kind != kind) continue;
+                Select(i);
+                return;
+            }
+        }
 
-            m_Active = def;
-            Selected = kind;
+        /// <summary>Selects an option by its position in <see cref="Options"/>.</summary>
+        public void Select(int index)
+        {
+            if (index < 0 || index >= m_Definitions.Length) return;
+
+            m_Active = m_Definitions[index];
+            Selected = m_Active.Kind;
+            SelectedIndex = index;
             Rotated = false;
             Enter(BuildMode.Place);
         }
@@ -204,6 +226,7 @@ namespace ZeroSynth.Build
         {
             Mode = BuildMode.None;
             m_Active = null;
+            SelectedIndex = -1;
             Rotated = false;
             PossessionController.BuildModeActive = false;
             if (m_Outline != null) m_Outline.enabled = false;
@@ -291,7 +314,7 @@ namespace ZeroSynth.Build
                 return;
             }
 
-            float cost = StructureCosts.Scrap(m_Active.Kind);
+            float cost = m_Active.ScrapCost;
             if (!TrySpend(cost))
             {
                 Message?.Invoke("NOT ENOUGH SCRAP");
@@ -465,7 +488,8 @@ namespace ZeroSynth.Build
         void Sell(Entity entity)
         {
             var structure = m_EntityManager.GetComponentData<Structure>(entity);
-            float refund = Mathf.Floor(StructureCosts.Scrap(structure.Kind) * m_SellRefund);
+            float paid = structure.Cost > 0f ? structure.Cost : StructureCosts.Scrap(structure.Kind);
+            float refund = Mathf.Floor(paid * m_SellRefund);
 
             var economyEntity = m_EconomyQuery.GetSingletonEntity();
             var economy = m_EntityManager.GetComponentData<Economy>(economyEntity);

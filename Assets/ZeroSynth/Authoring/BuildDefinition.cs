@@ -7,14 +7,21 @@ namespace ZeroSynth.Authoring
     /// Everything needed to place one kind of structure at runtime.
     /// </summary>
     /// <remarks>
-    /// Costs are not here: they live in <see cref="StructureCosts"/> next to the
-    /// economy, so prices and spending cannot drift apart.
+    /// Default prices live in <see cref="StructureCosts"/> next to the economy.
+    /// A definition may override its own, which is how several turret types
+    /// share one kind at different prices.
     /// </remarks>
     [Serializable]
     public sealed class BuildDefinition
     {
         public string Label = "Wall";
         public StructureKind Kind = StructureKind.Wall;
+
+        [Tooltip("Scrap cost. Zero uses the default price for this kind.")]
+        [Min(0f)] public float Cost;
+
+        /// <summary>What this costs to build, after any override.</summary>
+        public float ScrapCost => Cost > 0f ? Cost : StructureCosts.Scrap(Kind);
 
         [Header("Rendering")]
         public Mesh Mesh;

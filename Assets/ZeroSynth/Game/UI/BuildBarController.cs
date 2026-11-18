@@ -200,7 +200,7 @@ namespace ZeroSynth.UI
             m_RepairButton.EnableInClassList("build-option--selected", mode == BuildMode.Repair);
             m_SellButton.EnableInClassList("build-option--selected", mode == BuildMode.Sell);
             for (int i = 0; i < m_Options.Length; i++)
-                m_Buttons[i].EnableInClassList("build-option--selected", mode == BuildMode.Place && m_Build.Selected == m_Options[i].Kind);
+                m_Buttons[i].EnableInClassList("build-option--selected", mode == BuildMode.Place && m_Build.SelectedIndex == m_Options[i].Index);
             m_BuildHintKey = mode switch {
                 BuildMode.Place => 3,
                 BuildMode.Repair => 4,
@@ -230,8 +230,8 @@ namespace ZeroSynth.UI
         void Select(BuildOption option)
         {
             if (m_Build == null || m_Flow == null || m_Flow.State != GameState.Playing) return;
-            if (m_Build.Mode == BuildMode.Place && m_Build.Selected == option.Kind) m_Build.Cancel();
-            else m_Build.Select(option.Kind);
+            if (m_Build.Mode == BuildMode.Place && m_Build.SelectedIndex == option.Index) m_Build.Cancel();
+            else m_Build.Select(option.Index);
         }
 
         void Rotate()
