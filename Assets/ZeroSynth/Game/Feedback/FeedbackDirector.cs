@@ -29,11 +29,15 @@ namespace ZeroSynth.Feedback
         [SerializeField, Min(1)] int m_MaxTracers = 48;
         [SerializeField, Min(1)] int m_MaxShotsPerFrame = 40;
         [SerializeField, Min(1)] int m_MaxDeathsPerFrame = 60;
+        [SerializeField, Min(1)] int m_MaxDustPerFrame = 40;
 
         static readonly Color s_TurretColor = new Color(0.4f, 0.9f, 1f, 1f);
         static readonly Color s_AcidColor = new Color(0.6f, 0.9f, 0.2f, 1f);
         static readonly Color s_FleshColor = new Color(0.45f, 0.6f, 0.2f, 1f);
         static readonly Color s_BloodColor = new Color(0.75f, 0.1f, 0.1f, 1f);
+        static readonly Color s_DirtColor = new Color(0.55f, 0.42f, 0.27f, 1f);
+        static readonly Color s_DirtDarkColor = new Color(0.32f, 0.24f, 0.16f, 1f);
+        static readonly Color s_AcidSplashColor = new Color(0.55f, 0.95f, 0.15f, 1f);
 
         World m_World;
         EntityManager m_EntityManager;
@@ -137,7 +141,50 @@ namespace ZeroSynth.Feedback
             var feedback = m_EntityManager.GetComponentObject<SimFeedback>(m_Query.GetSingletonEntity());
             DrainShots(feedback);
             DrainDeaths(feedback);
+            DrainDust(feedback);
             ReadCounters(feedback);
+        }
+
+        void DrainDust(SimFeedback feedback)
+        {
+            int count = 0;
+            int surfaced = 0;
+
+            while (count < m_MaxDustPerFrame && feedback.Dust.TryDequeue(out var dust))
+            {
+                EmitDust(dust);
+                count++;
+                if (dust.Surfacing) surfaced++;
+            }
+
+            feedback.Dust.Clear();
+
+            if (surfaced > 0 && AudioDirector.Instance != null)
+                AudioDirector.Instance.Play(Sfx.Hit, Mathf.Min(0.7f, 0.2f + 0.1f * surfaced), 0.15f, 0.15f);
+        }
+
+        void EmitDust(DustEvent dust)
+        {
+            // A trail puff is a few small flecks; breaking the surface is a
+            // heave of dirt big enough to read from the tactical camera.
+            int particles = dust.Surfacing ? 16 : 3;
+            float spread = dust.Surfacing ? 2.6f : 0.9f;
+            float lift = dust.Surfacing ? 4.5f : 1.8f;
+
+            var emit = new ParticleSystem.EmitParams
+            {
+                position = (Vector3)dust.Position + Vector3.up * 0.15f,
+                startSize = dust.Surfacing ? 0.5f : 0.22f
+            };
+
+            for (int i = 0; i < particles; i++)
+            {
+                emit.startLifetime = Random.Range(0.45f, dust.Surfacing ? 0.95f : 0.7f);
+                var flat = Random.insideUnitCircle * spread;
+                emit.velocity = new Vector3(flat.x, lift * Random.Range(0.6f, 1.2f), flat.y);
+                emit.startColor = Color.Lerp(s_DirtColor, s_DirtDarkColor, Random.value);
+                m_Burst.Emit(emit, 1);
+            }
         }
 
         bool Bind()
@@ -197,6 +244,26 @@ namespace ZeroSynth.Feedback
 
             line.startColor = line.endColor = m_BaseColor[i];
             line.enabled = true;
+
+            if (acid) EmitAcidSplash(shot.To);
+        }
+
+        /// <summary>A green splash where a Spitter's shot lands, so it reads as acid and not a laser.</summary>
+        void EmitAcidSplash(float3 position)
+        {
+            var emit = new ParticleSystem.EmitParams
+            {
+                position = (Vector3)position,
+                startSize = 0.22f
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                emit.startLifetime = Random.Range(0.3f, 0.6f);
+                emit.velocity = Random.insideUnitSphere * 2.2f + Vector3.up * 2f;
+                emit.startColor = Color.Lerp(s_AcidSplashColor, s_AcidColor, Random.value);
+                m_Burst.Emit(emit, 1);
+            }
         }
 
         void FadeTracers()

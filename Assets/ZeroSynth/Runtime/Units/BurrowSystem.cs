@@ -1,4 +1,5 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -20,8 +21,12 @@ namespace ZeroSynth
     [UpdateBefore(typeof(AgentSteeringSystem))]
     public partial struct BurrowSystem : ISystem
     {
+        EntityQuery m_FeedbackQuery;
+
         public void OnCreate(ref SystemState state)
         {
+            m_FeedbackQuery = state.GetEntityQuery(ComponentType.ReadOnly<SimFeedback>());
+            state.RequireForUpdate(m_FeedbackQuery);
             state.RequireForUpdate<HordeTarget>();
             state.RequireForUpdate<SpawnProfile>();
             state.RequireForUpdate<SimClock>();
@@ -39,8 +44,13 @@ namespace ZeroSynth
             var ecb = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>()
                 .CreateCommandBuffer(state.WorldUnmanaged);
 
+            var feedback = state.EntityManager.GetComponentObject<SimFeedback>(
+                m_FeedbackQuery.GetSingletonEntity());
+
             state.Dependency = new BurrowJob
             {
+                Dust = feedback.Dust.AsParallelWriter(),
+                Frame = UnityEngine.Time.frameCount,
                 DeltaTime = SystemAPI.Time.DeltaTime * math.max(0f, clock.Speed),
                 Goal = target.Position,
                 SurfaceRadiusSq = profile.BurrowSurfaceRadius * profile.BurrowSurfaceRadius,
@@ -48,6 +58,10 @@ namespace ZeroSynth
                 SpeedMultiplier = profile.BurrowSpeedMultiplier,
                 Commands = ecb.AsParallelWriter()
             }.ScheduleParallel(state.Dependency);
+
+            // The dust queue belongs to a managed singleton, so nothing orders
+            // this job against the other writers; see TurretFireSystem.
+            state.CompleteDependency();
         }
     }
 
@@ -62,6 +76,13 @@ namespace ZeroSynth
         public float SpeedMultiplier;
 
         public EntityCommandBuffer.ParallelWriter Commands;
+        public NativeQueue<DustEvent>.ParallelWriter Dust;
+
+        /// <summary>Frame number, used to space each agent's trail puffs apart.</summary>
+        public int Frame;
+
+        /// <summary>One puff per agent every this many frames. Presentation only.</summary>
+        const int TrailInterval = 10;
 
         public void Execute(
             [ChunkIndexInQuery] int chunkIndex,
@@ -78,12 +99,22 @@ namespace ZeroSynth
             {
                 transform.Position.y = 0f;
                 Commands.SetComponentEnabled<Underground>(chunkIndex, entity, false);
+                Dust.Enqueue(new DustEvent { Position = transform.Position, Surfacing = true });
                 return;
             }
 
             float3 heading = toGoal * math.rsqrt(distSq);
             transform.Position += heading * agent.Speed * SpeedMultiplier * DeltaTime;
             transform.Position.y = Depth;
+
+            // A churned-up line of ground over the tunnel, so the player can
+            // see where they are coming from before they surface.
+            if ((entity.Index + Frame) % TrailInterval == 0)
+                Dust.Enqueue(new DustEvent
+                {
+                    Position = new float3(transform.Position.x, 0f, transform.Position.z),
+                    Surfacing = false
+                });
             transform.Rotation = quaternion.LookRotationSafe(heading, math.up());
         }
     }

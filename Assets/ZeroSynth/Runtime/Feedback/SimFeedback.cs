@@ -29,6 +29,13 @@ namespace ZeroSynth
         public float Size;
     }
 
+    /// <summary>Dirt thrown up by a tunnelling agent: a trail puff, or the burst of it breaking surface.</summary>
+    public struct DustEvent
+    {
+        public float3 Position;
+        public bool Surfacing;
+    }
+
     /// <summary>
     /// Things that happened in the simulation which presentation wants to react
     /// to: tracers, death bursts, sounds.
@@ -47,6 +54,7 @@ namespace ZeroSynth
     {
         public NativeQueue<ShotEvent> Shots;
         public NativeQueue<DeathEvent> Deaths;
+        public NativeQueue<DustEvent> Dust;
 
         // Plain counters, written and read on the main thread only.
         public int Hits;
@@ -60,6 +68,7 @@ namespace ZeroSynth
             Dispose();
             Shots = new NativeQueue<ShotEvent>(Allocator.Persistent);
             Deaths = new NativeQueue<DeathEvent>(Allocator.Persistent);
+            Dust = new NativeQueue<DustEvent>(Allocator.Persistent);
         }
 
         /// <summary>Empties queues nobody is reading, so they cannot grow without bound.</summary>
@@ -67,12 +76,14 @@ namespace ZeroSynth
         {
             if (Shots.IsCreated && Shots.Count > MaxQueued) Shots.Clear();
             if (Deaths.IsCreated && Deaths.Count > MaxQueued) Deaths.Clear();
+            if (Dust.IsCreated && Dust.Count > MaxQueued) Dust.Clear();
         }
 
         public void Dispose()
         {
             if (Shots.IsCreated) Shots.Dispose();
             if (Deaths.IsCreated) Deaths.Dispose();
+            if (Dust.IsCreated) Dust.Dispose();
         }
     }
 }
