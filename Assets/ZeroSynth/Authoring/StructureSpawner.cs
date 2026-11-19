@@ -31,7 +31,14 @@ namespace ZeroSynth.Authoring
             float3 centre = config.FootprintCentre(anchor, footprint);
             centre.y = def.YOffset;
 
-            em.AddComponentData(entity, LocalTransform.FromPosition(centre));
+            // A stretched mesh follows the swapped footprint on its own. A mesh
+            // authored at its real footprint (the wall, the foundry) has to be
+            // turned instead, or a rotated one would sit across its own cells.
+            quaternion facing = rotated && !def.StretchToFootprint
+                ? quaternion.RotateY(math.radians(90f))
+                : quaternion.identity;
+
+            em.AddComponentData(entity, LocalTransform.FromPositionRotation(centre, facing));
             em.AddComponentData(entity, new Structure { Kind = def.Kind, Footprint = footprint, Cost = def.ScrapCost });
             em.AddComponentData(entity, new GridAnchor { Cell = anchor });
             em.AddComponentData(entity, new Health { Current = def.Health, Max = def.Health });
@@ -74,7 +81,7 @@ namespace ZeroSynth.Authoring
                 // matrix, invisible, until the player resumed.
                 em.SetComponentData(entity, new LocalToWorld
                 {
-                    Value = math.mul(float4x4.TRS(centre, quaternion.identity, new float3(1f)), post)
+                    Value = math.mul(float4x4.TRS(centre, facing, new float3(1f)), post)
                 });
             }
 

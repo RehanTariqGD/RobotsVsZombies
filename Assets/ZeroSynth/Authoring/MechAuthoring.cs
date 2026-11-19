@@ -23,6 +23,8 @@ namespace ZeroSynth.Authoring
         [Header("Rendering")]
         [SerializeField] Mesh m_Mesh;
         [SerializeField] Material m_Material;
+        [Tooltip("Scale applied to the mesh. Leave at one for a mesh authored at real size.")]
+        [SerializeField] Vector3 m_VisualScale = new Vector3(2.5f, 4f, 2.5f);
 
         [Header("Chassis")]
         [SerializeField, Min(1f)] float m_MoveSpeed = 7f;
@@ -144,10 +146,15 @@ namespace ZeroSynth.Authoring
                 array,
                 MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0, 0));
 
-            m_EntityManager.AddComponentData(m_Entity, new PostTransformMatrix
+            // Identity for a mesh authored at real size. The old placeholder
+            // cube needed (2.5, 4, 2.5).
+            if (!m_VisualScale.Equals(Vector3.one))
             {
-                Value = float4x4.Scale(2.5f, 4f, 2.5f)
-            });
+                m_EntityManager.AddComponentData(m_Entity, new PostTransformMatrix
+                {
+                    Value = float4x4.Scale(m_VisualScale.x, m_VisualScale.y, m_VisualScale.z)
+                });
+            }
         }
 
         void OnDrawGizmosSelected()

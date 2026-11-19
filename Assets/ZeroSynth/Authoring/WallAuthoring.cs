@@ -22,6 +22,9 @@ namespace ZeroSynth.Authoring
         [SerializeField] Mesh m_Mesh;
         [SerializeField] Material m_Material;
 
+        [Tooltip("Stretch a unit cube across the footprint. Off for a mesh authored at its real footprint size.")]
+        [SerializeField] bool m_StretchToFootprint = true;
+
         [Header("Footprint")]
         [SerializeField, Min(1)] int m_CellsX = 10;
         [SerializeField, Min(1)] int m_CellsZ = 1;
@@ -73,7 +76,7 @@ namespace ZeroSynth.Authoring
 
             m_EntityManager.AddComponentData(m_Entity, new LocalTransform
             {
-                Position = centre + new float3(0f, 0.5f, 0f),
+                Position = centre + new float3(0f, m_StretchToFootprint ? 0.5f : 0f, 0f),
                 Rotation = quaternion.identity,
                 Scale = 1f
             });
@@ -99,6 +102,9 @@ namespace ZeroSynth.Authoring
                 description,
                 array,
                 MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0, 0));
+
+            if (!m_StretchToFootprint)
+                return;
 
             // PostTransformMatrix stretches the unit cube across the footprint
             // without touching LocalTransform.Scale, which must stay uniform.

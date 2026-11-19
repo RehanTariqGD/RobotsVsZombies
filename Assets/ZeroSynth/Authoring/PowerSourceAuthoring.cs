@@ -20,6 +20,8 @@ namespace ZeroSynth.Authoring
         [Header("Rendering")]
         [SerializeField] Mesh m_Mesh;
         [SerializeField] Material m_Material;
+        [Tooltip("Scale applied to the mesh. Leave at one for a mesh authored at real size.")]
+        [SerializeField] Vector3 m_VisualScale = new Vector3(2f, 3f, 2f);
 
         [Header("Power")]
         [Tooltip("Reactors originate power. Pylons only relay it.")]
@@ -94,10 +96,13 @@ namespace ZeroSynth.Authoring
                 array,
                 MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0, 0));
 
-            m_EntityManager.AddComponentData(m_Entity, new PostTransformMatrix
+            if (!m_VisualScale.Equals(Vector3.one))
             {
-                Value = float4x4.Scale(2f, 3f, 2f)
-            });
+                m_EntityManager.AddComponentData(m_Entity, new PostTransformMatrix
+                {
+                    Value = float4x4.Scale(m_VisualScale.x, m_VisualScale.y, m_VisualScale.z)
+                });
+            }
         }
 
         /// <summary>Kills this node, to watch the outage cascade.</summary>
