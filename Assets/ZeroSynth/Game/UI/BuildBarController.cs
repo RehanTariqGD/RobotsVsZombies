@@ -12,6 +12,17 @@ namespace ZeroSynth.UI
     [RequireComponent(typeof(UIDocument))]
     public sealed class BuildBarController : MonoBehaviour
     {
+        [Serializable]
+        public sealed class IconEntry
+        {
+            [Tooltip("Build option label, or Repair / Sell. Matched without regard to case.")]
+            public string Label;
+            public Texture2D Icon;
+        }
+
+        [Tooltip("Pictures for the build buttons. An option with no entry falls back to text.")]
+        [SerializeField] IconEntry[] m_Icons = Array.Empty<IconEntry>();
+
         GameFlow m_Flow;
         BuildController m_Build;
         VisualElement m_Screen, m_OptionsRoot;
@@ -48,10 +59,47 @@ namespace ZeroSynth.UI
             m_RotateButton.clicked += Rotate;
             m_RepairButton.clicked += SelectRepair;
             m_SellButton.clicked += SelectSell;
+            ApplyIcon(m_RepairButton, "Repair", "REPAIR");
+            ApplyIcon(m_SellButton, "Sell", "SELL");
             ApplyState(GameState.Boot);
             RefreshSelection();
             BindFlow();
             BindBuild();
+        }
+
+        /// <summary>
+        /// Swaps a button's text for a picture over a short caption. Leaves the
+        /// text alone when there is no icon, so a missing entry never blanks a button.
+        /// </summary>
+        void ApplyIcon(Button button, string label, string caption)
+        {
+            Texture2D texture = null;
+            foreach (var entry in m_Icons)
+            {
+                if (entry != null && entry.Icon != null
+                    && string.Equals(entry.Label, label, StringComparison.OrdinalIgnoreCase))
+                {
+                    texture = entry.Icon;
+                    break;
+                }
+            }
+
+            if (texture == null) return;
+
+            button.text = string.Empty;
+            button.Clear();
+            button.AddToClassList("build-button--icon");
+
+            var icon = new VisualElement();
+            icon.AddToClassList("build-icon");
+            icon.pickingMode = PickingMode.Ignore;
+            icon.style.backgroundImage = new StyleBackground(texture);
+            button.Add(icon);
+
+            var text = new Label(caption);
+            text.AddToClassList("build-caption");
+            text.pickingMode = PickingMode.Ignore;
+            button.Add(text);
         }
 
         void BindFlow()
@@ -86,9 +134,11 @@ namespace ZeroSynth.UI
                 for (int i = 0; i < count; i++)
                 {
                     var option = m_Build.Options[i];
+                    string cost = option.Cost.ToString("0.##", CultureInfo.InvariantCulture);
                     var button = new Button {
-                        text = option.Label.ToUpperInvariant() + "  " + option.Cost.ToString("0.##", CultureInfo.InvariantCulture)
+                        text = option.Label.ToUpperInvariant() + "  " + cost
                     };
+                    ApplyIcon(button, option.Label, option.Label.ToUpperInvariant() + "\n" + cost);
                     button.AddToClassList("button");
                     button.AddToClassList("build-button");
                     button.AddToClassList("build-option--locked");

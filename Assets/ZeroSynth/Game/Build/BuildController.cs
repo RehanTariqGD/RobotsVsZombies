@@ -85,6 +85,8 @@ namespace ZeroSynth.Build
         EntityQuery m_StructureQuery;
         GridAuthoring m_Grid;
         LineRenderer m_Outline;
+        MeshRenderer m_Ghost;
+        MeshFilter m_GhostFilter;
         BuildDefinition m_Active;
         bool m_Bound;
         bool m_EngagedPause;
@@ -138,6 +140,15 @@ namespace ZeroSynth.Build
             m_Outline.material = new Material(Shader.Find("Sprites/Default"));
             m_Outline.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             m_Outline.enabled = false;
+
+            var ghost = new GameObject("BuildGhost");
+            ghost.transform.SetParent(transform, false);
+            m_GhostFilter = ghost.AddComponent<MeshFilter>();
+            m_Ghost = ghost.AddComponent<MeshRenderer>();
+            m_Ghost.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            m_Ghost.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            m_Ghost.receiveShadows = false;
+            m_Ghost.enabled = false;
         }
 
         void OnDestroy()
@@ -230,6 +241,7 @@ namespace ZeroSynth.Build
             Rotated = false;
             PossessionController.BuildModeActive = false;
             if (m_Outline != null) m_Outline.enabled = false;
+            if (m_Ghost != null) m_Ghost.enabled = false;
 
             // Only undo a pause this controller started. If the player had
             // already frozen the game themselves, leave it frozen.
@@ -531,6 +543,46 @@ namespace ZeroSynth.Build
             m_Outline.SetPosition(3, new Vector3(centre.x - hx, y, centre.z + hz));
             m_Outline.startColor = m_Outline.endColor = colour;
             m_Outline.enabled = true;
+
+            DrawGhost(config, centre, footprint, colour);
+        }
+
+        /// <summary>
+        /// A tinted, see-through copy of the structure being placed, so the
+        /// player sees its real shape and facing and not just a square.
+        /// </summary>
+        void DrawGhost(GridConfig config, float3 centre, int2 footprint, Color colour)
+        {
+            if (m_Ghost == null) return;
+
+            var def = Mode == BuildMode.Place ? m_Active : null;
+            if (def == null || def.Mesh == null)
+            {
+                m_Ghost.enabled = false;
+                return;
+            }
+
+            if (m_GhostFilter.sharedMesh != def.Mesh)
+                m_GhostFilter.sharedMesh = def.Mesh;
+
+            Vector3 scale = def.VisualScale;
+            if (def.StretchToFootprint)
+            {
+                scale.x *= footprint.x * config.CellSize;
+                scale.z *= footprint.y * config.CellSize;
+            }
+
+            var t = m_Ghost.transform;
+            t.position = new Vector3(centre.x, m_GroundHeight + def.YOffset, centre.z);
+
+            // Mirrors StructureSpawner: only an unstretched mesh is turned.
+            t.rotation = Rotated && !def.StretchToFootprint
+                ? Quaternion.Euler(0f, 90f, 0f)
+                : Quaternion.identity;
+            t.localScale = scale;
+
+            m_Ghost.sharedMaterial.color = new Color(colour.r, colour.g, colour.b, 0.45f);
+            m_Ghost.enabled = true;
         }
 
         bool IsOverBlockingUi(Vector2 screen)

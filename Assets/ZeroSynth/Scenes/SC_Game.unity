@@ -18337,6 +18337,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 602504b9dad00364aa9c5dd78c474dab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: ZeroSynth.Game::ZeroSynth.UI.BuildBarController
+  m_Icons:
+  - Label: Wall
+    Icon: {fileID: 2800000, guid: db56706543d39b94681e77f805b5b063, type: 3}
+  - Label: Turret
+    Icon: {fileID: 2800000, guid: 3be18cea561efa544a212f9784af2952, type: 3}
+  - Label: Gatling
+    Icon: {fileID: 2800000, guid: 4b20b63bd939868499a13e91b818565f, type: 3}
+  - Label: Mortar
+    Icon: {fileID: 2800000, guid: 7745580739e40544a80d956706c6d7d6, type: 3}
+  - Label: Reactor
+    Icon: {fileID: 2800000, guid: 8c5825f2672ca244ca32217c3c7d5280, type: 3}
+  - Label: Pylon
+    Icon: {fileID: 2800000, guid: fd1618dfd382e334ba4859ebc0cd6724, type: 3}
+  - Label: Foundry
+    Icon: {fileID: 2800000, guid: 0542363f47f0043419274c1feb6c9a00, type: 3}
+  - Label: Repair
+    Icon: {fileID: 2800000, guid: cb99b069393cdea409b9a122a24dc716, type: 3}
+  - Label: Sell
+    Icon: {fileID: 2800000, guid: f13bff2e95c252f43aad84bdc8035b9e, type: 3}
 --- !u!114 &2040428057
 MonoBehaviour:
   m_ObjectHideFlags: 0
