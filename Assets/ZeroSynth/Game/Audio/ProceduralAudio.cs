@@ -14,6 +14,7 @@ namespace ZeroSynth.Audio
         WaveStart,
         Victory,
         Defeat,
+        UiClick,
     }
 
     /// <summary>
@@ -45,6 +46,7 @@ namespace ZeroSynth.Audio
                 case Sfx.Hit: return Hit();
                 case Sfx.Build: return BuildSound();
                 case Sfx.Error: return ErrorSound();
+                case Sfx.UiClick: return UiClick();
                 case Sfx.WaveStart: return WaveStart();
                 case Sfx.Victory: return Phrase("sfx_victory", new[] { 262f, 330f, 392f, 523f }, 0.2f, 5f);
                 case Sfx.Defeat: return Phrase("sfx_defeat", new[] { 330f, 277f, 233f, 196f }, 0.3f, 3.5f);
@@ -140,6 +142,15 @@ namespace ZeroSynth.Audio
         {
             return Render("sfx_error", 0.16f, (t, p) =>
                 Mathf.Sign(Mathf.Sin(Tau * 120f * t)) * 0.3f * Mathf.Exp(-t * 10f));
+        }
+
+        /// <summary>A short dry tick, quiet enough to be pressed a dozen times in a row.</summary>
+        static AudioClip UiClick()
+        {
+            var rng = new System.Random(53);
+            return Render("sfx_ui_click", 0.07f, (t, p) =>
+                Mathf.Sin(Tau * 1200f * t) * Mathf.Exp(-t * 70f) * 0.45f
+                + Noise(rng) * Mathf.Exp(-t * 200f) * 0.15f);
         }
 
         static AudioClip WaveStart()

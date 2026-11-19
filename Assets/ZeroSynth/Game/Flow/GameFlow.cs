@@ -77,8 +77,27 @@ namespace ZeroSynth.Flow
             if (GetComponent<ZeroSynth.Audio.AudioDirector>() == null)
                 gameObject.AddComponent<ZeroSynth.Audio.AudioDirector>();
 
+            // A tower defence is played with long stretches of watching, so the
+            // screen must not dim and lock while nobody is touching it.
+            Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
             Settings = GameSettings.Load();
             ApplySettings();
+        }
+
+        /// <summary>
+        /// A phone call, the home button or a task switch. Opens the pause menu
+        /// so the swarm does not keep eating the base while the player is away,
+        /// and banks the waves already cleared in case the system kills the app
+        /// while it is in the background.
+        /// </summary>
+        void OnApplicationPause(bool paused)
+        {
+            if (!paused || Instance != this || State != GameState.Playing)
+                return;
+
+            Pause();
+            RecordAbandonedProgress();
         }
 
         void Start()
